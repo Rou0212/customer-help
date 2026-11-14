@@ -30,6 +30,21 @@ const bigrams=s=>{const r=new Set();for(let i=0;i<s.length-1;i++)r.add(s.slice(i
 const FQ=(typeof FAQS!=='undefined')?FAQS:[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
 const faqPool=FQ.map(f=>({f,toks:[...new Set(f.tags.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(f.title),bg:bigrams(norm(f.title+(f.text||'')+(f.steps||[]).join('')))}));
 function rankFaq(q){const n=norm(q);if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
+// ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
+const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
+function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
+ const lc=(t.match(/e\d{3}|d11|aa(?![a-z])/g)||[]);
+ const faqs=faqPool.map(p=>{let s=0;p.toks.forEach(k=>{if(/^\d{4}$/.test(k)){if(codes.includes(k))s+=60}else if(lc.includes(k))s+=40;else if(k.length>=3&&t.includes(k))s+=k.length*2});return {f:p.f,score:s}}).filter(r=>r.score>=8).sort((a,b)=>b.score-a.score);
+ let doc=null;if(codes.length&&!faqs.some(r=>r.score>=60)){doc=pool.find(d=>d.id==='card-reader-errors'&&codes.some(c=>d.keywords.includes(c)))||null}
+ const lines=raw.split(/\n+/).map(x=>x.trim()).filter(x=>x&&(codes.some(c=>x.includes(c))||/錯誤|找不到|失敗|無法|不正確|請先|無卡號/.test(x))).slice(0,3);
+ return {codes,faqs:faqs.slice(0,2),doc,lines}}
+let ocrLib=null;
+function loadOcr(){if(ocrLib)return ocrLib;ocrLib=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{ocrLib=null;rej(new Error('load'))};document.head.appendChild(sc)});return ocrLib}
+let ocrWorker=null;
+async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T.createWorker(['chi_tra','eng']);
+ const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
+ const scale=Math.min(3,Math.max(1,1600/img.width));const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,0,0,c.width,c.height);
+ const r=await ocrWorker.recognize(c);return r.data.text||''}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
 function rank(q){const n=norm(q);if(!n)return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
@@ -50,11 +65,11 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.classList.add('lc-root','lc-mode-'+mode);
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟小黑貓助手">'+CAT+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="小黑貓助手"'+(mode==='fab'?' hidden':'')+'>'+
- '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>直接說或打字，例如「讀卡機跳 4029」、「看不到約診」。</span></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
+ '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字、用說的，或直接貼上錯誤畫面的截圖。</span></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或站號…">'+
- (SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
+ '<button type="button" class="lc-pic" aria-label="傳截圖給小黑貓看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
  const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');
  function say(html,who){const el=document.createElement('div');el.className='lc-msg lc-'+(who||'bot');el.innerHTML=html;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
@@ -70,6 +85,19 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
  root.addEventListener('click',e=>{const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
+ async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
+  const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
+  let text='';try{text=await ocr(file)}catch(e){wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
+  const a=analyzeScreen(text);
+  if(!a.faqs.length&&!a.doc){wait.innerHTML='喵…我看不出是哪個問題。'+(a.lines.length?'我看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'')+'可以打字告訴我錯誤代碼，或<a href="tel:0422518815,9">撥客服 04-2251-8815 分機 9</a>。';return}
+  let h=(a.lines.length?'我在畫面上看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'');
+  if(a.faqs.length){h+='這是：'+faqHtml(a.faqs[0].f);if(a.faqs[1]&&a.faqs[1].score>=12)h+='<p class="lc-alt">畫面上也有：</p><button type="button" class="lc-faqbtn" data-faq="'+a.faqs[1].f.id+'">'+esc(a.faqs[1].f.title)+'</button>'}
+  else h+='錯誤代碼 '+a.codes.join('、')+' 可以在這份手冊查到處理方式：'+card(a.doc);
+  wait.innerHTML=h;log.scrollTop=log.scrollHeight}
+ const fileIn=$('.lc-file');$('.lc-pic').onclick=()=>fileIn.click();fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
+ root.addEventListener('paste',e=>{const it=[...(e.clipboardData||{}).items||[]].find(x=>x.type&&x.type.startsWith('image/'));if(it){e.preventDefault();look(it.getAsFile())}});
+ panel.addEventListener('dragover',e=>{e.preventDefault();panel.classList.add('lc-drop')});panel.addEventListener('dragleave',()=>panel.classList.remove('lc-drop'));
+ panel.addEventListener('drop',e=>{e.preventDefault();panel.classList.remove('lc-drop');const f=[...e.dataTransfer.files].find(x=>x.type.startsWith('image/'));if(f)look(f)});
  if(mode==='fab'){const fab=$('.lc-fab');const toggle=on=>{panel.hidden=!on;fab.setAttribute('aria-expanded',on);root.classList.toggle('lc-open',on);if(on)input.focus();else fab.focus()};fab.onclick=()=>toggle(panel.hidden);$('.lc-close').onclick=()=>toggle(false);root.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});root.close=()=>{if(!panel.hidden)toggle(false)}}
  if(SR){const mic=$('.lc-mic');let rec=null;mic.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='zh-TW';rec.interimResults=true;rec.maxAlternatives=1;let final='';mic.classList.add('on');mic.setAttribute('aria-label','停止語音');input.placeholder='請說話…';
   rec.onresult=ev=>{let t='';for(const r of ev.results){t+=r[0].transcript;if(r.isFinal)final=t}input.value=t};
@@ -77,5 +105,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或站號…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank,rankFaq};
+window.LeyanCat={mount,rank,rankFaq,analyzeScreen};
 })();

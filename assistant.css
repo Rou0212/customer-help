@@ -17,7 +17,7 @@
 .lc-quick{display:flex;gap:6px;overflow-x:auto;padding:8px 14px}.lc-quick button{flex:none;min-height:36px;padding:4px 12px;border:1.5px solid var(--lc-line);border-radius:999px;background:#fff;font:inherit;font-size:13.5px;cursor:pointer;white-space:nowrap}.lc-quick button:hover{border-color:var(--lc-ink)}
 .lc-form{display:flex;gap:8px;padding:10px 14px 14px;border-top:1px solid var(--lc-line)}
 .lc-input{flex:1;min-width:0;height:48px;border:2px solid var(--lc-ink);border-radius:12px;padding:0 12px;font:inherit;font-size:16px}.lc-input:focus{outline:none;box-shadow:0 0 0 3px #1D4F9133}
-.lc-mic,.lc-send{flex:none;height:48px;border:2px solid var(--lc-ink);border-radius:12px;font:inherit;font-weight:700;cursor:pointer}.lc-mic{width:48px;background:#fff;display:grid;place-items:center}.lc-mic svg{width:22px;height:22px}.lc-mic.on{background:#C0392B;border-color:#C0392B;color:#fff}
+.lc-pic,.lc-mic,.lc-send{flex:none;height:48px;border:2px solid var(--lc-ink);border-radius:12px;font:inherit;font-weight:700;cursor:pointer}.lc-pic,.lc-mic{width:48px;background:#fff;display:grid;place-items:center}.lc-pic svg,.lc-mic svg{width:22px;height:22px}.lc-mic.on{background:#C0392B;border-color:#C0392B;color:#fff}
 @media(prefers-reduced-motion:no-preference){.lc-mic.on{animation:lc-pulse 1.2s infinite}}@keyframes lc-pulse{50%{box-shadow:0 0 0 6px #C0392B33}}
 .lc-send{padding:0 16px;background:var(--lc-ink);color:#fff}
 .lc-root :focus-visible{outline:3px solid #1D4F91;outline-offset:2px}
@@ -32,3 +32,4 @@ body.modal-open .lc-fab-wrap{display:none}
 /* 獨立小視窗 */
 .lc-mode-page{height:100%}.lc-mode-page .lc-panel{height:100%;border:0;border-radius:0}
 .lc-faq{margin-top:8px;padding:10px 12px;border:2px solid var(--c);border-radius:12px;background:#fff}.lc-faq b{display:block;font-size:15px}.lc-faq p{margin:4px 0 0;font-size:14px}.lc-faq ol{margin:6px 0 0;padding-left:20px;font-size:14px}.lc-faq li+li{margin-top:3px}.lc-img{display:block;margin-top:8px}.lc-img img{display:block;width:100%;border:1px solid var(--lc-line);border-radius:8px}.lc-faqbtn{display:block;width:100%;margin-top:6px;text-align:left;padding:8px 10px;border:1.5px solid var(--lc-ink);border-radius:10px;background:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}.lc-faqbtn:hover{background:#FAFAF9}
+.lc-shot{display:block;max-width:220px;max-height:180px;border-radius:8px}.lc-quote{margin:6px 0;padding:6px 10px;border-left:0;background:#fff;border-radius:8px;font-size:13px;color:var(--lc-muted)}.lc-drop{outline:3px dashed #1D4F91;outline-offset:-6px}
