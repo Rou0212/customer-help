@@ -41,25 +41,61 @@ function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));c
 let ocrLib=null;
 function loadOcr(){if(ocrLib)return ocrLib;ocrLib=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{ocrLib=null;rej(new Error('load'))};document.head.appendChild(sc)});return ocrLib}
 let ocrWorker=null;
-function popupCode(raw){
- const lines=String(raw).split(/\r?\n/);
+// OCR 常把 5 讀成 S、0 讀成 O：在 4 位數錯誤碼前後先修正
+const fixDigits=t=>String(t).replace(/[Ss$](?=[0-9OoＯ]{3})/g,'5').replace(/[OoＯ](?=\d{3})/g,'0').replace(/(\d{3})[OoＯ]/g,(m,a)=>a+'0');
+// 讀成不存在的代碼時，只修正一個常見混淆的數字（例如 9022→5022）；修正後剛好只有一個已知代碼才採用
+const CONFUSE={'5':'96','9':'5','6':'58','8':'036','0':'8','3':'8','1':'7','7':'1'};
+function nearCode(c){const hits=new Set();for(let i=0;i<4;i++)for(const r of (CONFUSE[c[i]]||'')){const k=c.slice(0,i)+r+c.slice(i+1);if(KNOWN_CODES.has(k))hits.add(k)}return hits.size===1?[...hits][0]:''}
+function popupCode(raw,fuzzy){
+ const lines=fixDigits(raw).split(/\r?\n/);
  for(const line of lines){
-  const m=line.match(/(?:^|[^\d])([0-9]{4})\s*[-－—]/);
+  const m=line.match(/(?:^|[^\d])([0-9]{4})\s*[-－—–)）:：]/);
   if(m&&KNOWN_CODES.has(m[1]))return m[1]
  }
- const codes=[...new Set((String(raw).match(/(^|\D)(\d{4})(?!\d)/g)||[]).map(x=>x.slice(-4)).filter(c=>KNOWN_CODES.has(c)))];
- return codes.length===1?codes[0]:''
+ const all=(fixDigits(raw).match(/(^|\D)(\d{4})(?!\d)/g)||[]).map(x=>x.slice(-4));
+ const codes=[...new Set(all.filter(c=>KNOWN_CODES.has(c)))];
+ if(codes.length===1)return codes[0];
+ if(fuzzy&&!codes.length){const n=[...new Set(all.filter(c=>!/^(19|20)\d\d$/.test(c)).map(nearCode).filter(Boolean))];if(n.length===1)return n[0]}
+ return ''
 }
+// 找瀏覽器警告視窗的藍色「確定」按鈕，回傳按鈕上方的對話框範圍（找不到回傳 null）
+function findDialog(c){
+ const sw=600,s=sw/c.width,sh=Math.round(c.height*s),t=document.createElement('canvas');t.width=sw;t.height=sh;
+ const tg=t.getContext('2d');tg.drawImage(c,0,0,sw,sh);const d=tg.getImageData(0,0,sw,sh).data,m=new Uint8Array(sw*sh);
+ for(let i=0;i<sw*sh;i++){const r=d[i*4],g=d[i*4+1],b=d[i*4+2];if(b>150&&b-r>90&&b-g>40&&r<110)m[i]=1}
+ let best=null;const st=[];
+ for(let i=0;i<sw*sh;i++){if(m[i]!==1)continue;m[i]=2;st.push(i);let n=0,x0=sw,x1=0,y0=sh,y1=0;
+  while(st.length){const k=st.pop(),x=k%sw,y=(k-x)/sw;n++;if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y;
+   for(const q of [k-1,k+1,k-sw,k+sw]){if(q>=0&&q<sw*sh&&m[q]===1&&Math.abs(q%sw-x)<=1){m[q]=2;st.push(q)}}}
+  const bw=x1-x0+1,bh=y1-y0+1,asp=bw/bh,fill=n/(bw*bh);
+  if(asp>1.6&&asp<3.8&&fill>.5&&bw>=sw*.015&&bw<=sw*.14&&y0>bh*2){const sc=n-Math.abs((x0+x1)/2-sw/2)*.3;if(!best||sc>best.sc)best={sc,x0,y0,bw,bh}}}
+ if(!best)return null;
+ const R=v=>v/s,bx=R(best.x0),by=R(best.y0),bw=R(best.bw),bh=R(best.bh);
+ const x=Math.max(0,bx+bw-7.6*bw),y=Math.max(0,by-3.4*bh);return {x,y,w:Math.min(c.width,bx+bw*1.3)-x,h:by-y}}
+// 裁出範圍、放大、輕微模糊（去掉翻拍螢幕的紋路）、轉灰階拉對比
+function prepCrop(c,r,bl){if(bl==null)bl=1.2;
+ const k=Math.min(4,Math.max(1.5,1800/r.w)),o=document.createElement('canvas');o.width=Math.round(r.w*k);o.height=Math.round(r.h*k);
+ const g=o.getContext('2d');g.imageSmoothingQuality='high';if('filter' in g)g.filter='blur('+(bl*k).toFixed(1)+'px)';
+ g.drawImage(c,r.x,r.y,r.w,r.h,0,0,o.width,o.height);if('filter' in g)g.filter='none';
+ const im=g.getImageData(0,0,o.width,o.height),p=im.data,h=new Uint32Array(256);
+ for(let i=0;i<p.length;i+=4){const v=(p[i]*299+p[i+1]*587+p[i+2]*114)/1000|0;p[i]=v;h[v]++}
+ let lo=0,hi=255,acc=0,cut=p.length/4*.02;while(acc+h[lo]<cut)acc+=h[lo++];acc=0;while(acc+h[hi]<cut)acc+=h[hi--];const sp=Math.max(1,hi-lo);
+ for(let i=0;i<p.length;i+=4){const v=Math.max(0,Math.min(255,(p[i]-lo)*255/sp));p[i]=p[i+1]=p[i+2]=v}
+ g.putImageData(im,0,0);return o}
 async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T.createWorker(['chi_tra','eng']);
  const src=URL.createObjectURL(file);let img;
  try{img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}finally{URL.revokeObjectURL(src)}
  const scale=Math.min(3,Math.max(1,2000/img.width));const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,0,0,c.width,c.height);
- // 常見系統彈窗位於畫面中央；先裁中間，避免背景病歷與列表蓋過錯誤碼。
- const center=document.createElement('canvas');center.width=Math.round(c.width*.7);center.height=Math.round(c.height*.42);
- center.getContext('2d').drawImage(c,c.width*.15,c.height*.28,c.width*.7,c.height*.42,0,0,center.width,center.height);
- const focused=(await ocrWorker.recognize(center)).data.text||'';
- const code=popupCode(focused);if(code)return code;
- const full=(await ocrWorker.recognize(c)).data.text||'';return full}
+ // 1) 有藍色「確定」按鈕的警告視窗：只讀視窗裡的字
+ const dlg=findDialog(c);
+ if(dlg){const votes={};for(const bl of [1.2,0,0.6]){const t=(await ocrWorker.recognize(prepCrop(c,dlg,bl))).data.text||'';const k=popupCode(t,true);if(k){votes[k]=(votes[k]||0)+1;if(votes[k]>=2)return {t:k,how:'dialog'}}}
+  const ks=Object.keys(votes);if(ks.length===1)return {t:ks[0],how:'dialog'};return {t:'',how:'unclear'}}
+ // 2) 畫面中央（彈窗通常在中間）
+ const ctr={x:c.width*.15,y:c.height*.28,w:c.width*.7,h:c.height*.42};
+ const focused=(await ocrWorker.recognize(prepCrop(c,ctr))).data.text||'';
+ const code=popupCode(focused);if(code)return {t:code,how:'center'};
+ // 3) 整張（不確定，會請使用者確認）
+ return {t:(await ocrWorker.recognize(c)).data.text||'',how:'full'}}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
 function rank(q){const n=norm(q);if(!n)return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
@@ -185,10 +221,11 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
-  let text='';try{text=await ocr(file)}catch(e){wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
+  let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
+  if(how==='unclear'){wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我馬上告訴你怎麼處理。';log.scrollTop=log.scrollHeight;return}
   const a=analyzeScreen(text);
   if(!a.faqs.length&&!a.doc){wait.innerHTML='喵…我看不出是哪個問題。'+(a.lines.length?'我看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'')+'可以打字告訴我錯誤代碼，或<a href="tel:0422518815,9">撥客服 04-2251-8815 分機 9</a>。';return}
-  let h=(a.lines.length?'我在畫面上看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'');
+  let h=(how==='full'?'<p class="lc-alt">這張圖我看得不太清楚，以下是最接近的答案；<b>如果不對，請直接打出畫面上的錯誤代碼</b>。</p>':'')+(a.lines.length?'我在畫面上看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'');
   if(a.faqs.length){h+='這是：'+faqHtml(a.faqs[0].f);if(a.faqs[1]&&a.faqs[1].score>=12)h+='<p class="lc-alt">畫面上也有：</p><button type="button" class="lc-faqbtn" data-faq="'+a.faqs[1].f.id+'">'+esc(a.faqs[1].f.title)+'</button>'}
   else h+='錯誤代碼 '+a.codes.join('、')+' 可以在這份手冊查到處理方式：'+card(a.doc);
   wait.innerHTML=h;log.scrollTop=log.scrollHeight}
@@ -203,5 +240,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或站號…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank,rankFaq,analyzeScreen};
+window.LeyanCat={mount,rank,rankFaq,analyzeScreen,_ocrPrep:{findDialog,prepCrop,popupCode}};
 })();
