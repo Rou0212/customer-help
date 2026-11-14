@@ -28,6 +28,10 @@ public class LeyanCatPet : Form
     [DllImport("user32.dll")] static extern bool SetWindowPos(IntPtr h, IntPtr after, int x, int y, int cx, int cy, uint flags);
     [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);
     [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+    [StructLayout(LayoutKind.Sequential)] struct LASTINPUT { public uint cbSize; public uint dwTime; }
+    [DllImport("user32.dll")] static extern bool GetLastInputInfo(ref LASTINPUT li);
+    static uint IdleMs() { LASTINPUT li = new LASTINPUT(); li.cbSize = (uint)Marshal.SizeOf(li); if (!GetLastInputInfo(ref li)) return 0; return (uint)Environment.TickCount - li.dwTime; }
+    bool idleSleep = false;
     const string ChatTitle = "\u6a02\u884d\u5c0f\u9ed1\u8c93";
     int chatX, chatY, chatWait = 0;
     static System.Threading.EventWaitHandle quit;
@@ -46,7 +50,7 @@ public class LeyanCatPet : Form
     Point downScreen, downLoc;
     NotifyIcon tray;
     ToolStripMenuItem restItem, startupItem;
-    // state: 0 走路, 1 坐下, 2 站著發呆
+    // state: 0 走路, 1 坐下, 2 站著發呆, 3 睡覺
     // mode: 0 平常, 1 吃零食, 2 玩逗貓棒
     int mode = 0, modeTicks = 0, bites = 0, heartTicks = 0, snacks = 0;
     double hopY = 0, hopV = 0, py = 0;
@@ -78,7 +82,7 @@ public class LeyanCatPet : Form
     void StartFeed()
     {
         if (mode == 2) EndPlay();
-        mode = 1; modeTicks = 0; bites = 0; bubbleTicks = 0; SetState(1, 9999);
+        idleSleep = false; mode = 1; modeTicks = 0; bites = 0; bubbleTicks = 0; SetState(1, 9999);
     }
 
     void FeedStep()
@@ -99,7 +103,7 @@ public class LeyanCatPet : Form
     // ---------- 玩逗貓棒 ----------
     void StartPlay()
     {
-        mode = 0;
+        mode = 0; idleSleep = false;
         if (wand == null) wand = new WandForm();
         mode = 2; modeTicks = 0; hopY = 0; hopV = 0; py = Top; x = Left;
         playItem.Text = "收起逗貓棒";
@@ -276,13 +280,22 @@ public class LeyanCatPet : Form
         if (mode == 1) { FeedStep(); if (Top != ground) Top = ground; Render(); return; }
         if (mode == 2) { PlayStep(wa, ground); Render(); return; }
         if (Top != ground) Top = ground;
-        if (!resting && --stateTicks <= 0)
+        // 電腦 3 分鐘沒人動 → 睡覺；有人動滑鼠鍵盤 → 醒來
+        if (tick % 25 == 0)
+        {
+            uint idle = IdleMs();
+            if (idle > 180000 && state != 3) { SetState(3, 999999); idleSleep = true; bubbleTicks = 0; }
+            else if (idle < 1500 && idleSleep) { idleSleep = false; SetState(1, resting ? 99999 : 60); Say("喵…（伸懶腰）", 50); }
+        }
+        if (!resting && state != 3 && --stateTicks <= 0)
         {
             int r = rnd.Next(100);
             if (r < 55) { if (rnd.Next(3) == 0) dir = -dir; SetState(0, 80 + rnd.Next(160)); }
-            else if (r < 85) { SetState(1, 90 + rnd.Next(150)); if (rnd.Next(2) == 0) Say("需要幫忙嗎？點我！", 90); }
-            else SetState(2, 30 + rnd.Next(50));
+            else if (r < 80) { SetState(1, 90 + rnd.Next(150)); if (rnd.Next(2) == 0) Say("需要幫忙嗎？點我！", 90); }
+            else if (r < 90) SetState(2, 30 + rnd.Next(50));
+            else { SetState(3, 750 + rnd.Next(1500)); bubbleTicks = 0; }
         }
+        if (state == 3 && !idleSleep && --stateTicks <= 0) { SetState(1, 80); Say("睡飽了～", 40); }
         if (state == 0)
         {
             x += 1.7 * dir;
@@ -315,6 +328,7 @@ public class LeyanCatPet : Form
         if (dragging) { dragging = false; falling = true; vy = 0; }
         else if (mode == 2) Say("抓到了！喵～", 35);
         else if (mode == 1) { }
+        else if (state == 3) { idleSleep = false; SetState(1, 120); Say("喵？我醒了！", 40); }
         else OpenChat();
     }
 
@@ -373,7 +387,8 @@ public class LeyanCatPet : Form
                 bool eating = mode == 1 && modeTicks > 18 && modeTicks < 92;
                 float munch = eating && (modeTicks / 4) % 2 == 0 ? 3f : 0f;
                 if (mode == 1 && modeTicks < 100) DrawTreat(g, ox + 78, oy, modeTicks, bites);
-                if (state == 1 || dragging || falling) DrawSit(g, ox, oy + munch, blinkTicks > 0 || eating);
+                if (state == 3 && mode == 0 && !dragging && !falling) DrawSleep(g, ox, oy);
+                else if (state == 1 || state == 3 || dragging || falling) DrawSit(g, ox, oy + munch, blinkTicks > 0 || eating);
                 else DrawWalk(g, ox, oy, dir > 0, (state == 0 || hopY > 0) ? frame : 1, blinkTicks > 0);
                 if (heartTicks > 0) DrawHearts(g, heartTicks);
                 if (bubbleTicks > 0 && !dragging) DrawBubble(g, bubbleText);
@@ -396,6 +411,45 @@ public class LeyanCatPet : Form
             g.FillEllipse(fish, tx, ty, w, 11);
             if (b == 0) g.FillEllipse(dark, tx + 4, ty + 3, 3, 3);
         }
+    }
+
+    void DrawSleep(Graphics g, float ox, float oy)
+    {
+        GraphicsState gs = g.Save();
+        g.TranslateTransform(ox, oy);
+        float br = (float)Math.Sin(tick / 12.0) * 1.5f;
+        using (SolidBrush ink = new SolidBrush(Ink))
+        using (SolidBrush pink = new SolidBrush(Pink))
+        using (Pen tailPen = new Pen(Ink, 8f))
+        using (Pen eyeLine = new Pen(Color.FromArgb(255, 246, 201, 69), 2f))
+        {
+            tailPen.StartCap = LineCap.Round; tailPen.EndCap = LineCap.Round;
+            // 身體（隨呼吸起伏）
+            g.FillEllipse(ink, 22, 58 - br, 74, 32 + br);
+            // 尾巴繞到前面
+            g.DrawBezier(tailPen, 92, 76, 106, 84, 78, 88, 46, 85);
+            // 頭趴在前面
+            g.FillEllipse(ink, 10, 52, 40, 34);
+            g.FillPolygon(ink, new PointF[] { new PointF(13, 62), new PointF(14, 42), new PointF(26, 54) });
+            g.FillPolygon(ink, new PointF[] { new PointF(32, 53), new PointF(44, 42), new PointF(47, 61) });
+            g.FillPolygon(pink, new PointF[] { new PointF(17, 58), new PointF(17, 48), new PointF(24, 55) });
+            g.FillPolygon(pink, new PointF[] { new PointF(35, 54), new PointF(42, 48), new PointF(44, 58) });
+            // 閉著的眼睛
+            g.DrawArc(eyeLine, 17, 66, 8, 5, 0, 180); g.DrawArc(eyeLine, 31, 66, 8, 5, 0, 180);
+            g.FillPolygon(pink, new PointF[] { new PointF(26, 75), new PointF(31, 75), new PointF(28.5f, 77.5f) });
+        }
+        // Zzz 往上飄
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                int ph = (tick + i * 20) % 60;
+                int a = ph < 10 ? ph * 25 : Math.Max(0, 255 - (ph - 10) * 5);
+                using (SolidBrush zb = new SolidBrush(Color.FromArgb(a, 91, 100, 112)))
+                using (Font fz = new Font("Arial", 9f + i * 2.5f, FontStyle.Bold))
+                    g.DrawString("z", fz, zb, 46 + ph * 0.4f + i * 6, 40 - ph * 0.6f - i * 4);
+            }
+        }
+        g.Restore(gs);
     }
 
     void DrawHearts(Graphics g, int t)
