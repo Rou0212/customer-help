@@ -1,6 +1,6 @@
 # 小黑貓 LINE@ 自動回覆：設定教學
 
-值班時，小黑貓會自動回覆 LINE 官方帳號的訊息；看不懂的、客戶要找真人的、截圖，都會立刻傳到你的 Telegram。
+值班時，小黑貓會自動回覆 LINE 官方帳號的訊息；看不懂的、客戶要找真人的、截圖，都會立刻透過 OpenClaw 的 bot 傳到你的 Telegram。值班的開關和教新題目，都直接跟 OpenClaw 說。
 
 - **非值班時間**：小黑貓完全不動作，照舊由人工回覆。
 - **值班中**：
@@ -14,14 +14,12 @@
 
 ---
 
-## 一、建立 Telegram 通知機器人（5 分鐘）
+## 一、準備 Telegram 通知（5 分鐘）
 
-> 請**新建一個 bot**，不要用 FlowCare 那個：一個 bot 只能接一個伺服器，共用會讓 FlowCare 收不到訊息。
+通知直接用 **OpenClaw 現在的 Telegram bot** 發，不用另外建 bot。小黑貓只會「發訊息」，不會接收或更動 bot 設定，所以不會搶走 OpenClaw 的訊息。
 
-1. 在 Telegram 搜尋 **@BotFather** → 傳 `/newbot` → 名稱輸入「樂衍小黑貓」，帳號輸入例如 `leyan_cat_bot`
-2. BotFather 會給你一串 **token**（像 `123456:ABC-...`），先記在安全的地方
-3. 搜尋你剛建立的 bot，按「開始」，隨便傳一句話給它
-4. 搜尋 **@userinfobot** → 按「開始」，它會回你的 **Id**（一串數字），這就是 `TELEGRAM_CHAT_ID`
+1. 從 OpenClaw 的設定找到它的 **Telegram bot token**（像 `123456:ABC-...`），先記在安全的地方
+2. 在 Telegram 搜尋 **@userinfobot** → 按「開始」，它會回你的 **Id**（一串數字），這就是 `TELEGRAM_CHAT_ID`
 
 ## 二、建立 Cloudflare Worker（10 分鐘）
 
@@ -34,13 +32,15 @@
 
    | 名稱 | 內容 |
    |---|---|
-   | `TELEGRAM_BOT_TOKEN` | 第一步拿到的 token |
+   | `TELEGRAM_BOT_TOKEN` | 第一步：OpenClaw 的 bot token |
    | `TELEGRAM_CHAT_ID` | 第一步拿到的 Id（數字） |
-   | `TELEGRAM_WEBHOOK_SECRET` | 自己打一串英數亂碼，例如 `cat2026xyzQ8` |
+   | `DUTY_KEY` | 自己打一串 20 字以上的英數亂碼。OpenClaw 切換值班要用，等一下也要交給 OpenClaw |
    | `LINE_CHANNEL_SECRET` | 第三步拿到 |
    | `LINE_CHANNEL_ACCESS_TOKEN` | 第三步拿到 |
 
    選填（類型「純文字」）：`DEFAULT_SHIFT_HOURS`（預設值班 9 小時）、`LOG_AUTO_REPLIES`（填 `false` 就不通知自動回覆的紀錄）
+
+   > **不要**設定 `TELEGRAM_RECEIVE`。那是給「專屬 bot」用的，用 OpenClaw 的 bot 時設了會搶走 OpenClaw 的訊息。
 
 7. 記下 Worker 的網址，例如 `https://leyan-cat.你的帳號.workers.dev`
 
@@ -55,29 +55,38 @@
    - **Webhook**：開啟
    - **自動回應訊息**：建議關閉，避免跟小黑貓重複回覆
 
-## 四、接上 Telegram 並測試
+## 四、測試
 
-1. 用瀏覽器打開：`https://leyan-cat.你的帳號.workers.dev/setup?key=你的TELEGRAM_WEBHOOK_SECRET`
-   → 頁面顯示「完成！」，Telegram 會收到小黑貓的訊息
-2. 在 Telegram 對小黑貓傳 `/狀態`，它會回「目前沒有值班」
-3. 先試試看它會怎麼回答：打開 `https://leyan-cat.你的帳號.workers.dev/test?q=讀卡機跳4029`
-4. 傳 `/值班開始`，再用你自己的 LINE 傳訊息給（測試用）官方帳號，確認會收到自動回覆、Telegram 會收到紀錄
+1. 用瀏覽器打開：`https://leyan-cat.你的帳號.workers.dev/setup?key=你的DUTY_KEY`
+   → 頁面顯示「完成！」，Telegram 的 OpenClaw 對話裡會收到小黑貓的測試訊息
+2. 打開 `https://leyan-cat.你的帳號.workers.dev/health`，確認 `"data":"live"`（代表有讀到網站上最新的資料）
+3. 試試看它會怎麼回答：`https://leyan-cat.你的帳號.workers.dev/test?q=讀卡機跳4029`
+4. 把 `OPENCLAW-說明書.md` 交給 OpenClaw，並把 Worker 網址和 `DUTY_KEY` 存進 OpenClaw 的設定（**不要**透過 LINE 傳）
+5. 跟 OpenClaw 說「小黑貓開始值班 1 小時」，再用你自己的 LINE 傳訊息給（測試用）官方帳號，確認會收到自動回覆、Telegram 會收到紀錄
 
 ## 每天怎麼用
 
-| 在 Telegram 傳 | 效果 |
+直接跟 OpenClaw 說：
+
+| 你說 | 效果 |
 |---|---|
-| `/值班開始` | 小黑貓上班，預設 9 小時後自動下班 |
-| `/值班開始 4` | 上班 4 小時 |
-| `/值班結束` | 立刻下班，訊息交還人工 |
-| `/狀態` | 查看目前有沒有在值班 |
+| 「小黑貓上班」 | 開始值班，預設 9 小時後自動下班 |
+| 「小黑貓值班 4 小時」 | 上班 4 小時 |
+| 「小黑貓下班」 | 立刻下班，訊息交還人工 |
+| 「小黑貓有在值班嗎？」 | 查看目前狀態 |
 
-## 更新手冊或常見問題後
+**教小黑貓新題目**：收到「❓ 小黑貓看不懂」的通知時，在 Telegram **回覆那則通知**，告訴 OpenClaw 正確處理方式，例如「把這題加進常見問題：沒有 ACC 編號的那幾筆是附件沒傳上去，請重新上傳那幾筆的附件」。OpenClaw 會改 `faq.js` 推上 GitHub。
+- 網站的小黑貓：GitHub Pages 更新後（約 1～2 分鐘）就會了
+- LINE 的小黑貓：每 5 分鐘自動到網站抓最新資料，學會新題目時會通知你「🐾 小黑貓學會了新題目」
+- `faq.js` 寫壞了（例如少了逗號）：LINE 小黑貓會沿用上一版繼續回覆，並通知你哪裡有問題
+- 題目裡如果出現「請提供密碼／PIN 碼／身分證」這類字眼，小黑貓不會拿那題自動回覆，並通知你
 
-小黑貓的資料是打包在 `dist/worker.js` 裡的。網站的手冊或常見問題更新後，請 Claude 重新產生 `dist/worker.js`（或自己在 customer-help 資料夾執行 `node line-cat-worker/build.mjs`），再貼到 Cloudflare 的「編輯程式碼」→ 部署。
+## 什麼時候才需要重新貼程式碼
+
+只有改到 `line-cat-worker/src/handler.js`（小黑貓的判斷邏輯）時才需要：在 customer-help 資料夾執行 `node line-cat-worker/build.mjs`，把新的 `dist/worker.js` 貼到 Cloudflare 的「編輯程式碼」→ 部署。改手冊或常見問題**不用**重貼。
 
 ## 費用
 
-- Cloudflare Workers、KV：免費方案每天有 10 萬次請求，一般客服量用不完。
+- Cloudflare Workers、KV：免費方案每天 10 萬次請求、KV 每天 1,000 次寫入，一般客服量用不完。
 - LINE：小黑貓回覆客戶用的是「回覆訊息」，依 LINE 的計費規則通常不計入每月則數（請以 LINE 官方說明為準）；通知你是走 Telegram，不花 LINE 的則數。
 - Telegram：免費。
