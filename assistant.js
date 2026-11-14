@@ -27,6 +27,9 @@ const pool=documents.filter(d=>!d.region);
 const codeOf=d=>STATION[d.parent||d.id]||'';
 const lineOf=d=>LINES[(d.parent?documents.find(x=>x.id===d.parent):d).category]||{color:'#15191E'};
 const bigrams=s=>{const r=new Set();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r};
+const FQ=(typeof FAQS!=='undefined')?FAQS:[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
+const faqPool=FQ.map(f=>({f,toks:[...new Set(f.tags.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(f.title),bg:bigrams(norm(f.title+(f.text||'')+(f.steps||[]).join('')))}));
+function rankFaq(q){const n=norm(q);if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
 function rank(q){const n=norm(q);if(!n)return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
@@ -41,7 +44,7 @@ function rank(q){const n=norm(q);if(!n)return [];
 const urlOf=d=>BASE+'?doc='+encodeURIComponent(d.parent?d.id:codeOf(d))+'&read=1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></svg>';
-const QUICK=['讀卡機跳錯誤碼','卡片鎖住了','手機看不到約診','上傳無法夾帶檔案','健保申報'];
+const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  root.classList.add('lc-root','lc-mode-'+mode);
@@ -57,12 +60,15 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function say(html,who){const el=document.createElement('div');el.className='lc-msg lc-'+(who||'bot');el.innerHTML=html;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
  function open(d){const url=urlOf(d);if(opt.onOpen){opt.onOpen(d,url);return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
  function card(d){const l=lineOf(d);return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span class="lc-code" style="background:'+l.color+'">'+codeOf(d)+'</span><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'}
- function ask(q){q=q.trim();if(!q)return;say(esc(q),'user');input.value='';const r=rank(q);
+ function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')}
+ function ask(q){q=q.trim();if(!q)return;say(esc(q),'user');input.value='';const r=rank(q),fr=rankFaq(q);
+  if(fr.length&&(!r.length||(fr[0].score*1.2>=r[0].score&&r[0].score<100))){const more=fr.slice(1,3).filter(x=>x.score>=fr[0].score*0.7);say('喵～這個我知道：'+faqHtml(fr[0].f)+(more.length?'<p class="lc-alt">也可能是：</p>'+more.map(x=>'<button type="button" class="lc-faqbtn" data-faq="'+x.f.id+'">'+esc(x.f.title)+'</button>').join(''):''));return}
   if(!r.length){say('喵…我找不到相關的手冊。可以換個說法，或直接<a href="tel:0422518815,9">撥客服 04-2251-8815 分機 9</a>。');return}
   const top=r[0].d,alts=r.slice(1,3).filter(x=>x.score>=r[0].score*0.6).map(x=>x.d);
-  const m=say('找到了！幫你打開 <b>'+codeOf(top)+' '+esc(top.title)+'</b>'+card(top)+(alts.length?'<p class="lc-alt">不是這份？也可能是：</p>'+alts.map(card).join(''):''));
+  const rf=fr.length&&fr[0].score>=r[0].score*0.5?fr[0].f:null;
+  const m=say('找到了！幫你打開 <b>'+codeOf(top)+' '+esc(top.title)+'</b>'+card(top)+(alts.length?'<p class="lc-alt">不是這份？也可能是：</p>'+alts.map(card).join(''):'')+(rf?'<p class="lc-alt">相關排解：</p><button type="button" class="lc-faqbtn" data-faq="'+rf.id+'">'+esc(rf.title)+'</button>':''));
   setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
- root.addEventListener('click',e=>{const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+ root.addEventListener('click',e=>{const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  if(mode==='fab'){const fab=$('.lc-fab');const toggle=on=>{panel.hidden=!on;fab.setAttribute('aria-expanded',on);root.classList.toggle('lc-open',on);if(on)input.focus();else fab.focus()};fab.onclick=()=>toggle(panel.hidden);$('.lc-close').onclick=()=>toggle(false);root.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});root.close=()=>{if(!panel.hidden)toggle(false)}}
  if(SR){const mic=$('.lc-mic');let rec=null;mic.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='zh-TW';rec.interimResults=true;rec.maxAlternatives=1;let final='';mic.classList.add('on');mic.setAttribute('aria-label','停止語音');input.placeholder='請說話…';
@@ -71,5 +77,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或站號…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank};
+window.LeyanCat={mount,rank,rankFaq};
 })();
