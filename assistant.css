@@ -78,3 +78,6 @@ body.modal-open .lc-fab-wrap{display:none}
 @keyframes lc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes lc-pounce{0%,100%{transform:none}35%{transform:translateY(-16px) scale(1.06,.96)}70%{transform:translateY(0) scale(.97,1.04)}}
 @keyframes lc-swat{0%,100%{opacity:0;transform:translate(0,0)}30%,60%{opacity:1;transform:translate(10px,-38px)}}
+.lc-playing .lc-cat{visibility:hidden}
+.lc-runner{position:absolute;left:0;top:0;width:76px;height:76px;pointer-events:none;will-change:transform}.lc-runner-in{width:100%;height:100%}.lc-runner .lc-cat{display:block;width:100%;height:100%;visibility:visible;filter:drop-shadow(0 6px 6px #0003)}
+.lc-runner.run .lc-cat{animation:lc-bob .28s ease-in-out infinite}.lc-runner.run .lc-tail{animation:lc-wag .28s ease-in-out infinite}.lc-runner.pounce .lc-cat{animation:lc-pounce .5s ease-out 1}.lc-runner.pounce .lc-paw{animation:lc-swat .5s ease-out 1}

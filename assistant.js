@@ -100,7 +100,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
- const catEl=()=>root.querySelector('.lc-cat');
+ let runnerEl=null;const catEl=()=>runnerEl?runnerEl.querySelector('.lc-cat'):root.querySelector('.lc-cat');
  let idleT=0,actT=0,acting='',lastLine=-1;
  const pick=a=>{let i;do{i=Math.floor(Math.random()*a.length)}while(a.length>1&&i===lastLine);lastLine=i;return a[i]};
  function endAct(){clearTimeout(actT);root.classList.remove('lc-licking','lc-feeding');acting=''}
@@ -111,7 +111,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  // 貓旁邊的短話泡泡
  let sayEl=null,sayT=0;
  function placeSay(){if(!sayEl||!sayEl.classList.contains('on'))return;const c=catEl();if(!c)return;const r=c.getBoundingClientRect(),w=sayEl.offsetWidth,h=sayEl.offsetHeight;let l,t;
-  if(mode==='fab'){l=r.left-w-8;t=r.top+r.height/2-h/2;if(l<8){l=r.left+r.width/2-w/2;t=r.top-h-8}}else{l=r.left;t=r.bottom+6}
+  if(runnerEl){l=r.left+r.width/2-w/2;t=r.top-h-6}else if(mode==='fab'){l=r.left-w-8;t=r.top+r.height/2-h/2;if(l<8){l=r.left+r.width/2-w/2;t=r.top-h-8}}else{l=r.left;t=r.bottom+6}
   sayEl.style.left=Math.max(8,Math.min(l,innerWidth-w-8))+'px';sayEl.style.top=Math.max(8,Math.min(t,innerHeight-h-8))+'px'}
  function petSay(text,ms){if(!sayEl){sayEl=document.createElement('div');sayEl.className='lc-pet-say';sayEl.setAttribute('role','status');document.body.appendChild(sayEl)}
   sayEl.textContent=text;sayEl.classList.add('on');placeSay();clearTimeout(sayT);sayT=setTimeout(()=>sayEl.classList.remove('on'),ms||2600)}
@@ -120,7 +120,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function feed(){if(acting==='feed'||acting==='wand')return;endAct();acting='feed';const m=motionOK();if(m)root.classList.add('lc-feeding');
   setTimeout(()=>{if(acting==='feed')petSay(pick(TREAT_SAYS))},m?1300:0);
   actT=setTimeout(()=>{endAct();armIdle()},m?2800:600)}
- // 逗貓棒：全畫面遊戲。貓會看著小球、左右跑（網站右下角版本）、湊近就撲
+ // 逗貓棒：全畫面遊戲。另一隻小黑貓在整個畫面追著逗貓棒（手機追手指）跑，湊近就撲
  const WAND_SAYS=['喵！抓到了～','嘿咻！','再甩一次～','這個我要咬！'];
  function startWand(){
   if(!motionOK()){petSay('你的裝置設定了「減少動態效果」，逗貓棒先休息喵',3200);return}
@@ -129,23 +129,29 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   ov.innerHTML='<svg aria-hidden="true"><line class="lc-w-rod" stroke="#6B4A2B" stroke-width="5" stroke-linecap="round"/><line class="lc-w-str" stroke="#8A9199" stroke-width="1.6"/><g class="lc-w-pom"><path d="M-4 8-12 20M0 9V24M4 8 12 20" stroke="#F6C945" stroke-width="3" stroke-linecap="round" fill="none"/><circle r="10" fill="#E9524A"/></g></svg><button type="button" class="lc-wand-end">收起逗貓棒 ✕</button>';
   document.body.appendChild(ov);root.classList.add('lc-playing');
   const rod=ov.querySelector('.lc-w-rod'),str=ov.querySelector('.lc-w-str'),pomG=ov.querySelector('.lc-w-pom'),endBtn=ov.querySelector('.lc-wand-end');
-  const fabR=mode==='fab'?root.querySelector('.lc-fab').getBoundingClientRect():null,homeX=fabR?fabR.left+fabR.width/2:0;
-  const st={x:innerWidth/2,y:innerHeight*.5},pom={x:st.x,y:st.y+30};let raf=0,dx=0,runT=0,lastPounce=0,lastMove=Date.now();
-  function pounce(){const n=Date.now();if(n-lastPounce<900)return;lastPounce=n;root.classList.remove('lc-pounce');void root.offsetWidth;root.classList.add('lc-pounce');setTimeout(()=>root.classList.remove('lc-pounce'),520);if(Math.random()<.45)petSay(pick(WAND_SAYS),1500)}
+  const home=root.querySelector('.lc-cat').getBoundingClientRect(),SZ=76;
+  const runner=document.createElement('div');runner.className='lc-runner';runner.innerHTML='<div class="lc-runner-in"></div>';runner.firstChild.appendChild(root.querySelector('.lc-cat').cloneNode(true));ov.appendChild(runner);runnerEl=runner;
+  const st={x:innerWidth/2,y:innerHeight*.45},pom={x:st.x,y:st.y+30},cat={x:home.left+home.width/2,y:home.top+home.height/2};let raf=0,face=1,lastPounce=0,lastMove=Date.now(),pouncing=0;
+  function pounce(){const n=Date.now();if(n-lastPounce<900)return;lastPounce=n;pouncing=n;runner.classList.remove('pounce');void runner.offsetWidth;runner.classList.add('pounce');setTimeout(()=>runner.classList.remove('pounce'),520);if(Math.random()<.45)petSay(pick(WAND_SAYS),1500)}
   function frame(){
    pom.x+=(st.x-pom.x)*.16;pom.y+=(st.y+30-pom.y)*.16;
    rod.setAttribute('x1',st.x);rod.setAttribute('y1',st.y);rod.setAttribute('x2',st.x+46);rod.setAttribute('y2',st.y-58);
    str.setAttribute('x1',st.x);str.setAttribute('y1',st.y);str.setAttribute('x2',pom.x);str.setAttribute('y2',pom.y-9);
    pomG.setAttribute('transform','translate('+pom.x.toFixed(1)+','+pom.y.toFixed(1)+')');
-   const c=catEl(),r=c.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
-   c.style.setProperty('--ex',Math.max(-3,Math.min(3,(pom.x-cx)/60)).toFixed(2)+'px');c.style.setProperty('--ey',Math.max(-2,Math.min(2,(pom.y-cy)/80)).toFixed(2)+'px');
-   if(fabR){const target=Math.max(-(homeX-44),Math.min(innerWidth-44-homeX,pom.x-homeX));if(Math.abs(target-dx)>8){dx=target;root.style.transform='translateX('+dx.toFixed(0)+'px)';root.classList.add('lc-run');clearTimeout(runT);runT=setTimeout(()=>root.classList.remove('lc-run'),450)}}
-   const now=Date.now(),dy=cy-pom.y;if(now-lastMove<600&&Math.abs(pom.x-cx)<60&&dy>-30&&dy<150)pounce();
+   // 貓追到小球下方一點的位置
+   const tx=Math.max(SZ/2,Math.min(innerWidth-SZ/2,pom.x)),ty=Math.max(SZ/2,Math.min(innerHeight-SZ/2,pom.y+SZ*.55));
+   const vx=tx-cat.x,vy=ty-cat.y,d=Math.hypot(vx,vy),sp=Math.min(d,Math.max(3,d*.09),11);
+   if(d>2){cat.x+=vx/d*sp;cat.y+=vy/d*sp}
+   if(Math.abs(vx)>6)face=vx>0?1:-1;
+   runner.classList.toggle('run',d>14);
+   runner.style.transform='translate('+(cat.x-SZ/2).toFixed(1)+'px,'+(cat.y-SZ/2).toFixed(1)+'px)';runner.firstChild.style.transform='scaleX('+face+')';
+   const c=runner.querySelector('.lc-cat');c.style.setProperty('--ex',Math.max(-3,Math.min(3,(pom.x-cat.x)/60*face)).toFixed(2)+'px');c.style.setProperty('--ey',Math.max(-2,Math.min(2,(pom.y-cat.y)/80)).toFixed(2)+'px');
+   const now=Date.now();if(now-lastMove<600&&Math.hypot(pom.x-cat.x,pom.y-cat.y)<SZ*.9)pounce();
    if(now-lastMove>90000){end();return}
    placeSay();raf=requestAnimationFrame(frame)}
   function onKey(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();end()}}
-  function end(){cancelAnimationFrame(raf);clearTimeout(runT);document.removeEventListener('keydown',onKey,true);ov.remove();
-   root.classList.remove('lc-run','lc-pounce','lc-playing');root.style.transform='';const c=catEl();c.style.removeProperty('--ex');c.style.removeProperty('--ey');acting='';
+  function end(){cancelAnimationFrame(raf);document.removeEventListener('keydown',onKey,true);ov.remove();runnerEl=null;
+   root.classList.remove('lc-run','lc-pounce','lc-playing');root.style.transform='';acting='';
    setTimeout(()=>petSay('好玩～謝謝你陪我玩',2200),500);armIdle()}
   ov.addEventListener('pointermove',e=>{st.x=e.clientX;st.y=e.clientY;lastMove=Date.now()});
   ov.addEventListener('pointerdown',e=>{if(e.target===endBtn)return;st.x=e.clientX;st.y=e.clientY;lastMove=Date.now();pounce()});
