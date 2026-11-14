@@ -49,7 +49,7 @@ public class LeyanCatPet : Form
     // state: 0 走路, 1 坐下, 2 站著發呆
     // mode: 0 平常, 1 吃零食, 2 玩逗貓棒
     int mode = 0, modeTicks = 0, bites = 0, heartTicks = 0, snacks = 0;
-    double hopY = 0, hopV = 0;
+    double hopY = 0, hopV = 0, py = 0;
     string bubbleText = "需要幫忙嗎？點我！";
     ToolStripMenuItem playItem;
     WandForm wand;
@@ -101,7 +101,7 @@ public class LeyanCatPet : Form
     {
         mode = 0;
         if (wand == null) wand = new WandForm();
-        mode = 2; modeTicks = 0; hopY = 0; hopV = 0;
+        mode = 2; modeTicks = 0; hopY = 0; hopV = 0; py = Top; x = Left;
         playItem.Text = "收起逗貓棒";
         wand.Show(); wand.Follow();
         Say("喵！那是什麼！", 40);
@@ -113,6 +113,7 @@ public class LeyanCatPet : Form
         mode = 0; hopY = 0; hopV = 0;
         playItem.Text = "玩逗貓棒";
         if (wand != null) wand.Hide();
+        falling = true; vy = 0;
         Say("好好玩！下次再陪我玩～", 70);
         heartTicks = 40;
         SetState(1, resting ? 99999 : 140);
@@ -121,31 +122,32 @@ public class LeyanCatPet : Form
     void PlayStep(Rectangle wa, int ground)
     {
         modeTicks++;
-        if (modeTicks > PLAY_TICKS) { EndPlay(); Top = ground; return; }
+        if (modeTicks > PLAY_TICKS) { EndPlay(); return; }
         wand.Follow();
         Point c = Cursor.Position;
-        double dx = (c.X - W / 2.0) - x;
-        if (Math.Abs(dx) > 10)
+        Rectangle sb = Screen.FromPoint(c).Bounds;
+        // 目標：逗貓棒羽毛正下方，整個螢幕都追得到
+        double tx = Math.Max(sb.Left - 20, Math.Min(sb.Right - W + 20, c.X - W / 2.0));
+        double ty = Math.Max(sb.Top - 40, Math.Min(sb.Bottom - H + 4, c.Y + 26 - (H - 92)));
+        double dx = tx - x, dy = ty - py, d = Math.Sqrt(dx * dx + dy * dy);
+        if (d > 8)
         {
-            dir = dx > 0 ? 1 : -1;
-            x += dir * Math.Min(5.5, Math.Abs(dx));
-            if (x < wa.Left - 20) x = wa.Left - 20;
-            if (x > wa.Right - W + 20) x = wa.Right - W + 20;
-            Left = (int)x;
+            double sp = Math.Min(d, Math.Max(3.0, Math.Min(12.0, d * 0.12)));
+            x += dx / d * sp; py += dy / d * sp;
+            if (Math.Abs(dx) > 4) dir = dx > 0 ? 1 : -1;
             state = 0;
             if (tick % 2 == 0) frame = (frame + 1) % 4;
         }
         else state = 2;
-        bool near = Math.Abs(dx) < 50 && c.Y > ground - 220 && c.Y < ground + H;
-        if (hopY <= 0 && hopV <= 0 && near && rnd.Next(10) == 0) hopV = 9 + rnd.Next(5);
+        if (hopY <= 0 && hopV <= 0 && d < 60 && rnd.Next(9) == 0) hopV = 8 + rnd.Next(5);
         if (hopV != 0 || hopY > 0)
         {
             hopY += hopV; hopV -= 1.1;
             if (hopY <= 0) { hopY = 0; hopV = 0; }
         }
-        if (hopY > 20 && Math.Abs(dx) < 25 && bubbleTicks == 0 && rnd.Next(3) == 0) Say("抓到了！", 25);
+        if (hopY > 18 && d < 40 && bubbleTicks == 0 && rnd.Next(3) == 0) Say("抓到了！", 25);
         else if (bubbleTicks == 0 && rnd.Next(90) == 0) Say(rnd.Next(2) == 0 ? "喵！" : "喵喵喵！", 20);
-        Top = ground - (int)hopY;
+        Location = new Point((int)x, (int)(py - hopY));
     }
 
     // 跟著滑鼠的逗貓棒（不會擋到滑鼠點擊）
