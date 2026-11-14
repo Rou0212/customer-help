@@ -1,0 +1,74 @@
+[
+  {
+    "id": "central",
+    "title": "中區管控指標",
+    "scope": "中區申報注意事項整理版",
+    "edition": "使用者提供整理版",
+    "steps": [],
+    "note": "實際規定以官方公告為準",
+    "source_page": "https://www.nhi.gov.tw/ch/cp-5937-89303-2802-1.html",
+    "checked": "2026-11-13",
+    "files": [
+      {
+        "id": "nhi-central-notes",
+        "title": "中區申報注意事項",
+        "edition": "使用者提供整理版",
+        "status": "分區申報注意事項整理版",
+        "filename": "健保作業_中區申報注意事項.pdf",
+        "sha256": "e89b219cbd551029ab5787188fa954a939665117a2623412ad6a086cd91c5cc7",
+        "provenance": "user-provided-compilation",
+        "pages": 13,
+        "bytes": 469862,
+        "url": "files/nhi-central-notes.pdf"
+      }
+    ]
+  },
+  {
+    "id": "kaoping",
+    "title": "高屏區指標",
+    "scope": "高屏區申報注意事項整理版",
+    "edition": "使用者提供整理版",
+    "steps": [],
+    "note": "實際規定以官方公告為準",
+    "source_page": "https://www.nhi.gov.tw/ch/cp-5956-01b7f-2819-1.html",
+    "checked": "2026-11-13",
+    "files": [
+      {
+        "id": "nhi-kaoping-notes",
+        "title": "高屏區申報注意事項",
+        "edition": "使用者提供整理版",
+        "status": "分區申報注意事項整理版",
+        "filename": "健保作業_高屏區申報注意事項.pdf",
+        "sha256": "571a1526305586b7dab03c1f194928a51e0bc74563917cf66a019607dabfa2ed",
+        "provenance": "user-provided-compilation",
+        "pages": 13,
+        "bytes": 496498,
+        "url": "files/nhi-kaoping-notes.pdf"
+      }
+    ]
+  },
+  {
+    "id": "south",
+    "title": "南區指標",
+    "scope": "南區申報注意事項整理版",
+    "edition": "使用者提供整理版",
+    "steps": [],
+    "note": "實際規定以官方公告為準",
+    "source_page": "https://www.nhi.gov.tw/ch/cp-6115-1f6df-2807-1.html",
+    "checked": "2026-11-13",
+    "files": [
+      {
+        "id": "nhi-south-notes",
+        "title": "南區申報注意事項",
+        "edition": "使用者提供整理版",
+        "status": "分區申報注意事項整理版",
+        "filename": "健保作業_南區申報注意事項.pdf",
+        "sha256": "16c74b31ea4e01a6fae6f8d96191123d68633a3beaa196e932ab4537b798d356",
+        "provenance": "user-provided-compilation",
+        "pages": 12,
+        "bytes": 465941,
+        "url": "files/nhi-south-notes.pdf"
+      }
+    ]
+  }
+]
