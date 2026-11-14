@@ -73,7 +73,7 @@ function rank(q){const n=norm(q);if(!n)return [];
   return {d:p.d,score:s}}).filter(r=>r.score>=8).sort((a,b)=>b.score-a.score)}
 const urlOf=d=>BASE+'?doc='+encodeURIComponent(d.parent?d.id:codeOf(d))+'&read=1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -82,7 +82,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  '<section class="lc-panel" id="lc-panel" aria-label="小黑貓助手"'+(mode==='fab'?' hidden':'')+'>'+
  '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字、用說的，或直接貼上錯誤畫面的截圖。</span></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
- '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
+ '<div class="lc-quick"><button type="button" class="lc-feedbtn" data-feed aria-label="餵小黑貓吃零食">🐟 餵零食</button>'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或站號…">'+
  '<button type="button" class="lc-pic" aria-label="傳截圖給小黑貓看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
@@ -98,7 +98,23 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const rf=fr.length&&fr[0].score>=r[0].score*0.5?fr[0].f:null;
   const m=say('找到了！幫你打開 <b>'+codeOf(top)+' '+esc(top.title)+'</b>'+card(top)+(alts.length?'<p class="lc-alt">不是這份？也可能是：</p>'+alts.map(card).join(''):'')+(rf?'<p class="lc-alt">相關排解：</p><button type="button" class="lc-faqbtn" data-faq="'+rf.id+'">'+esc(rf.title)+'</button>':''));
   setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
- root.addEventListener('click',e=>{const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+ // ---- 小黑貓互動：閒置時舔毛、餵零食 ----
+ const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+ let idleT=0,actT=0,acting='',lastTreat=-1;
+ function endAct(){clearTimeout(actT);root.classList.remove('lc-licking','lc-feeding');acting=''}
+ function armIdle(){clearTimeout(idleT);idleT=setTimeout(()=>{if(!root.isConnected)return;if(acting||document.hidden||!motionOK()){armIdle();return}
+  acting='lick';root.classList.add('lc-licking');actT=setTimeout(()=>{endAct();armIdle()},2900)},10000+Math.random()*6000)}
+ function wake(){if(acting==='lick')endAct();armIdle()}
+ ['pointerdown','keydown','input'].forEach(ev=>root.addEventListener(ev,wake,true));
+ const TREAT_SAYS=['喵～好吃！謝謝你','咕嚕咕嚕…這個零食超讚','吃飽了就有力氣幫你找手冊','喵嗚～再來一口也可以喔','好滿足～我繼續值班囉'];
+ const feedBtn=$('.lc-feedbtn');
+ function feed(){if(acting==='feed')return;endAct();acting='feed';feedBtn.disabled=true;
+  let i;do{i=Math.floor(Math.random()*TREAT_SAYS.length)}while(i===lastTreat);lastTreat=i;
+  if(motionOK())root.classList.add('lc-feeding');
+  setTimeout(()=>say(esc(TREAT_SAYS[i])),motionOK()?1300:0);
+  actT=setTimeout(()=>{endAct();feedBtn.disabled=false;armIdle()},motionOK()?2800:600)}
+ armIdle();
+ root.addEventListener('click',e=>{if(e.target.closest('[data-feed]')){feed();return}const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
