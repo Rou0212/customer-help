@@ -41,10 +41,25 @@ function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));c
 let ocrLib=null;
 function loadOcr(){if(ocrLib)return ocrLib;ocrLib=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{ocrLib=null;rej(new Error('load'))};document.head.appendChild(sc)});return ocrLib}
 let ocrWorker=null;
+function popupCode(raw){
+ const lines=String(raw).split(/\r?\n/);
+ for(const line of lines){
+  const m=line.match(/(?:^|[^\d])([0-9]{4})\s*[-－—]/);
+  if(m&&KNOWN_CODES.has(m[1]))return m[1]
+ }
+ const codes=[...new Set((raw.match(/(?<!\d)\d{4}(?!\d)/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
+ return codes.length===1?codes[0]:''
+}
 async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T.createWorker(['chi_tra','eng']);
- const img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=URL.createObjectURL(file)});
- const scale=Math.min(3,Math.max(1,1600/img.width));const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,0,0,c.width,c.height);
- const r=await ocrWorker.recognize(c);return r.data.text||''}
+ const src=URL.createObjectURL(file);let img;
+ try{img=await new Promise((res,rej)=>{const i=new Image();i.onload=()=>res(i);i.onerror=rej;i.src=src})}finally{URL.revokeObjectURL(src)}
+ const scale=Math.min(3,Math.max(1,2000/img.width));const c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);const g=c.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,0,0,c.width,c.height);
+ // 常見系統彈窗位於畫面中央；先裁中間，避免背景病歷與列表蓋過錯誤碼。
+ const center=document.createElement('canvas');center.width=Math.round(c.width*.7);center.height=Math.round(c.height*.42);
+ center.getContext('2d').drawImage(c,c.width*.15,c.height*.28,c.width*.7,c.height*.42,0,0,center.width,center.height);
+ const focused=(await ocrWorker.recognize(center)).data.text||'';
+ const code=popupCode(focused);if(code)return code;
+ const full=(await ocrWorker.recognize(c)).data.text||'';return full}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
 function rank(q){const n=norm(q);if(!n)return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
