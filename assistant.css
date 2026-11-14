@@ -36,7 +36,6 @@ body.modal-open .lc-fab-wrap{display:none}
 .lc-quick{scrollbar-width:none}.lc-quick::-webkit-scrollbar{display:none}
 /* 小黑貓互動：閒置舔毛、餵零食（尊重「減少動態效果」設定） */
 .lc-paw,.lc-tongue,.lc-mouth,.lc-treat{opacity:0}
-.lc-feedbtn{border-color:#E9A15B!important;background:#FFF6E8!important;font-weight:700!important}.lc-feedbtn:hover:not(:disabled){border-color:var(--lc-ink)!important}.lc-feedbtn:disabled{opacity:.6;cursor:default}
 @media(prefers-reduced-motion:no-preference){
 .lc-head-g{transform-origin:58px 84px}.lc-tongue{transform-origin:59px 67px}.lc-mouth{transform-origin:58px 68px}.lc-treat{transform-origin:57px 8px}
 .lc-root.lc-licking .lc-head-g{animation:lc-lick-head 2.9s ease-in-out 1}
@@ -58,3 +57,24 @@ body.modal-open .lc-fab-wrap{display:none}
 @keyframes lc-eat-eyes{0%,38%,92%,100%{transform:scaleY(1)}46%,84%{transform:scaleY(.25)}}
 @keyframes lc-eat-mouth{0%,43%{opacity:0;transform:scaleY(.2)}46%{opacity:1;transform:scaleY(1)}52%{transform:scaleY(.2)}58%{transform:scaleY(1)}64%{transform:scaleY(.2)}70%{transform:scaleY(1)}76%{transform:scaleY(.2)}82%,100%{opacity:0;transform:scaleY(.2)}}
 @keyframes lc-wag{0%,100%{transform:rotate(0)}25%{transform:rotate(22deg)}75%{transform:rotate(-14deg)}}
+/* 桌面互動：右鍵選單、短話泡泡、逗貓棒 */
+.lc-cat,.lc-fab{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.lc-hint{color:var(--lc-muted);font-size:12.5px}
+.lc-look{transform:translate(var(--ex,0px),var(--ey,0px));transition:transform .12s ease-out}
+.lc-mode-fab{transition:transform .45s cubic-bezier(.25,.8,.3,1)}
+.lc-playing .lc-fab{background:transparent;border-color:transparent;box-shadow:none}.lc-playing .lc-fab-tip{display:none}
+.lc-pet-say,.lc-menu,.lc-wand-ov{font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;box-sizing:border-box}
+.lc-pet-say{position:fixed;left:-999px;top:0;z-index:9999;max-width:220px;background:#15191E;color:#fff;font-size:14px;font-weight:700;line-height:1.4;padding:7px 11px;border-radius:12px;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}.lc-pet-say.on{opacity:1;transform:none}
+.lc-menu{position:fixed;z-index:9998;min-width:156px;background:#fff;border:2px solid #15191E;border-radius:12px;padding:5px;box-shadow:0 10px 28px #0003}
+.lc-menu button{display:block;width:100%;min-height:44px;text-align:left;border:0;border-radius:8px;background:transparent;color:#15191E;padding:0 12px;font:inherit;font-size:15px;font-weight:700;cursor:pointer}.lc-menu button:hover,.lc-menu button:focus-visible{background:#F3F4F2}.lc-menu button:focus-visible{outline:3px solid #1D4F91;outline-offset:-3px}
+.lc-wand-ov{position:fixed;inset:0;z-index:9997;cursor:none;touch-action:none}.lc-wand-ov svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lc-wand-end{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);min-height:44px;padding:0 18px;border:2px solid #15191E;border-radius:999px;background:#fff;color:#15191E;font:inherit;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px #0003}.lc-wand-end:focus-visible{outline:3px solid #1D4F91;outline-offset:2px}
+@media(prefers-reduced-motion:no-preference){
+.lc-root.lc-run .lc-cat{animation:lc-bob .3s ease-in-out infinite}
+.lc-root.lc-run .lc-tail{animation:lc-wag .3s ease-in-out infinite}
+.lc-root.lc-pounce .lc-cat{animation:lc-pounce .5s ease-out 1}
+.lc-root.lc-pounce .lc-paw{animation:lc-swat .5s ease-out 1}
+}
+@keyframes lc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes lc-pounce{0%,100%{transform:none}35%{transform:translateY(-16px) scale(1.06,.96)}70%{transform:translateY(0) scale(.97,1.04)}}
+@keyframes lc-swat{0%,100%{opacity:0;transform:translate(0,0)}30%,60%{opacity:1;transform:translate(10px,-38px)}}

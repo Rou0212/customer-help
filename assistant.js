@@ -73,16 +73,16 @@ function rank(q){const n=norm(q);if(!n)return [];
   return {d:p.d,score:s}}).filter(r=>r.score>=8).sort((a,b)=>b.score-a.score)}
 const urlOf=d=>BASE+'?doc='+encodeURIComponent(d.parent?d.id:codeOf(d))+'&read=1';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
+const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-look"><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  root.classList.add('lc-root','lc-mode-'+mode);
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟小黑貓助手">'+CAT+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="小黑貓助手"'+(mode==='fab'?' hidden':'')+'>'+
- '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字、用說的，或直接貼上錯誤畫面的截圖。</span></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
+ '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字、用說的，或直接貼上錯誤畫面的截圖。</span><small class="lc-hint">對我按右鍵（手機長按）可以餵零食、玩逗貓棒喔。</small></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
- '<div class="lc-quick"><button type="button" class="lc-feedbtn" data-feed aria-label="餵小黑貓吃零食">🐟 餵零食</button>'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
+ '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或站號…">'+
  '<button type="button" class="lc-pic" aria-label="傳截圖給小黑貓看"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
@@ -98,23 +98,84 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const rf=fr.length&&fr[0].score>=r[0].score*0.5?fr[0].f:null;
   const m=say('找到了！幫你打開 <b>'+codeOf(top)+' '+esc(top.title)+'</b>'+card(top)+(alts.length?'<p class="lc-alt">不是這份？也可能是：</p>'+alts.map(card).join(''):'')+(rf?'<p class="lc-alt">相關排解：</p><button type="button" class="lc-faqbtn" data-faq="'+rf.id+'">'+esc(rf.title)+'</button>':''));
   setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
- // ---- 小黑貓互動：閒置時舔毛、餵零食 ----
+ // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
- let idleT=0,actT=0,acting='',lastTreat=-1;
+ const catEl=()=>root.querySelector('.lc-cat');
+ let idleT=0,actT=0,acting='',lastLine=-1;
+ const pick=a=>{let i;do{i=Math.floor(Math.random()*a.length)}while(a.length>1&&i===lastLine);lastLine=i;return a[i]};
  function endAct(){clearTimeout(actT);root.classList.remove('lc-licking','lc-feeding');acting=''}
  function armIdle(){clearTimeout(idleT);idleT=setTimeout(()=>{if(!root.isConnected)return;if(acting||document.hidden||!motionOK()){armIdle();return}
   acting='lick';root.classList.add('lc-licking');actT=setTimeout(()=>{endAct();armIdle()},2900)},10000+Math.random()*6000)}
  function wake(){if(acting==='lick')endAct();armIdle()}
  ['pointerdown','keydown','input'].forEach(ev=>root.addEventListener(ev,wake,true));
+ // 貓旁邊的短話泡泡
+ let sayEl=null,sayT=0;
+ function placeSay(){if(!sayEl||!sayEl.classList.contains('on'))return;const c=catEl();if(!c)return;const r=c.getBoundingClientRect(),w=sayEl.offsetWidth,h=sayEl.offsetHeight;let l,t;
+  if(mode==='fab'){l=r.left-w-8;t=r.top+r.height/2-h/2;if(l<8){l=r.left+r.width/2-w/2;t=r.top-h-8}}else{l=r.left;t=r.bottom+6}
+  sayEl.style.left=Math.max(8,Math.min(l,innerWidth-w-8))+'px';sayEl.style.top=Math.max(8,Math.min(t,innerHeight-h-8))+'px'}
+ function petSay(text,ms){if(!sayEl){sayEl=document.createElement('div');sayEl.className='lc-pet-say';sayEl.setAttribute('role','status');document.body.appendChild(sayEl)}
+  sayEl.textContent=text;sayEl.classList.add('on');placeSay();clearTimeout(sayT);sayT=setTimeout(()=>sayEl.classList.remove('on'),ms||2600)}
+ // 餵零食：掉小魚、吃一口、搖尾巴、說一句話
  const TREAT_SAYS=['喵～好吃！謝謝你','咕嚕咕嚕…這個零食超讚','吃飽了就有力氣幫你找手冊','喵嗚～再來一口也可以喔','好滿足～我繼續值班囉'];
- const feedBtn=$('.lc-feedbtn');
- function feed(){if(acting==='feed')return;endAct();acting='feed';feedBtn.disabled=true;
-  let i;do{i=Math.floor(Math.random()*TREAT_SAYS.length)}while(i===lastTreat);lastTreat=i;
-  if(motionOK())root.classList.add('lc-feeding');
-  setTimeout(()=>say(esc(TREAT_SAYS[i])),motionOK()?1300:0);
-  actT=setTimeout(()=>{endAct();feedBtn.disabled=false;armIdle()},motionOK()?2800:600)}
+ function feed(){if(acting==='feed'||acting==='wand')return;endAct();acting='feed';const m=motionOK();if(m)root.classList.add('lc-feeding');
+  setTimeout(()=>{if(acting==='feed')petSay(pick(TREAT_SAYS))},m?1300:0);
+  actT=setTimeout(()=>{endAct();armIdle()},m?2800:600)}
+ // 逗貓棒：全畫面遊戲。貓會看著小球、左右跑（網站右下角版本）、湊近就撲
+ const WAND_SAYS=['喵！抓到了～','嘿咻！','再甩一次～','這個我要咬！'];
+ function startWand(){
+  if(!motionOK()){petSay('你的裝置設定了「減少動態效果」，逗貓棒先休息喵',3200);return}
+  if(acting==='wand')return;endAct();acting='wand';if(mode==='fab'&&root.close)root.close();
+  const ov=document.createElement('div');ov.className='lc-wand-ov';
+  ov.innerHTML='<svg aria-hidden="true"><line class="lc-w-rod" stroke="#6B4A2B" stroke-width="5" stroke-linecap="round"/><line class="lc-w-str" stroke="#8A9199" stroke-width="1.6"/><g class="lc-w-pom"><path d="M-4 8-12 20M0 9V24M4 8 12 20" stroke="#F6C945" stroke-width="3" stroke-linecap="round" fill="none"/><circle r="10" fill="#E9524A"/></g></svg><button type="button" class="lc-wand-end">收起逗貓棒 ✕</button>';
+  document.body.appendChild(ov);root.classList.add('lc-playing');
+  const rod=ov.querySelector('.lc-w-rod'),str=ov.querySelector('.lc-w-str'),pomG=ov.querySelector('.lc-w-pom'),endBtn=ov.querySelector('.lc-wand-end');
+  const fabR=mode==='fab'?root.querySelector('.lc-fab').getBoundingClientRect():null,homeX=fabR?fabR.left+fabR.width/2:0;
+  const st={x:innerWidth/2,y:innerHeight*.5},pom={x:st.x,y:st.y+30};let raf=0,dx=0,runT=0,lastPounce=0,lastMove=Date.now();
+  function pounce(){const n=Date.now();if(n-lastPounce<900)return;lastPounce=n;root.classList.remove('lc-pounce');void root.offsetWidth;root.classList.add('lc-pounce');setTimeout(()=>root.classList.remove('lc-pounce'),520);if(Math.random()<.45)petSay(pick(WAND_SAYS),1500)}
+  function frame(){
+   pom.x+=(st.x-pom.x)*.16;pom.y+=(st.y+30-pom.y)*.16;
+   rod.setAttribute('x1',st.x);rod.setAttribute('y1',st.y);rod.setAttribute('x2',st.x+46);rod.setAttribute('y2',st.y-58);
+   str.setAttribute('x1',st.x);str.setAttribute('y1',st.y);str.setAttribute('x2',pom.x);str.setAttribute('y2',pom.y-9);
+   pomG.setAttribute('transform','translate('+pom.x.toFixed(1)+','+pom.y.toFixed(1)+')');
+   const c=catEl(),r=c.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+   c.style.setProperty('--ex',Math.max(-3,Math.min(3,(pom.x-cx)/60)).toFixed(2)+'px');c.style.setProperty('--ey',Math.max(-2,Math.min(2,(pom.y-cy)/80)).toFixed(2)+'px');
+   if(fabR){const target=Math.max(-(homeX-44),Math.min(innerWidth-44-homeX,pom.x-homeX));if(Math.abs(target-dx)>8){dx=target;root.style.transform='translateX('+dx.toFixed(0)+'px)';root.classList.add('lc-run');clearTimeout(runT);runT=setTimeout(()=>root.classList.remove('lc-run'),450)}}
+   const now=Date.now(),dy=cy-pom.y;if(now-lastMove<600&&Math.abs(pom.x-cx)<60&&dy>-30&&dy<150)pounce();
+   if(now-lastMove>90000){end();return}
+   placeSay();raf=requestAnimationFrame(frame)}
+  function onKey(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();end()}}
+  function end(){cancelAnimationFrame(raf);clearTimeout(runT);document.removeEventListener('keydown',onKey,true);ov.remove();
+   root.classList.remove('lc-run','lc-pounce','lc-playing');root.style.transform='';const c=catEl();c.style.removeProperty('--ex');c.style.removeProperty('--ey');acting='';
+   setTimeout(()=>petSay('好玩～謝謝你陪我玩',2200),500);armIdle()}
+  ov.addEventListener('pointermove',e=>{st.x=e.clientX;st.y=e.clientY;lastMove=Date.now()});
+  ov.addEventListener('pointerdown',e=>{if(e.target===endBtn)return;st.x=e.clientX;st.y=e.clientY;lastMove=Date.now();pounce()});
+  endBtn.onclick=end;document.addEventListener('keydown',onKey,true);endBtn.focus({preventScroll:true});raf=requestAnimationFrame(frame)}
+ // 右鍵（手機長按）選單
+ let menu=null,lp=0,lpAt=0;
+ function closeMenu(){if(!menu)return;menu.remove();menu=null;document.removeEventListener('pointerdown',onDocDown,true);document.removeEventListener('keydown',onMenuKey,true);removeEventListener('blur',closeMenu);removeEventListener('scroll',closeMenu,true);removeEventListener('resize',closeMenu)}
+ function onDocDown(e){if(menu&&!menu.contains(e.target))closeMenu()}
+ function onMenuKey(e){if(!menu)return;const it=[...menu.querySelectorAll('button')],i=it.indexOf(document.activeElement);
+  if(e.key==='Escape'){e.preventDefault();e.stopPropagation();closeMenu()}
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();it[(i+(e.key==='ArrowDown'?1:-1)+it.length)%it.length].focus()}
+  else if(e.key==='Tab')closeMenu()}
+ function openMenu(x,y,touch){closeMenu();if(acting==='wand')return;
+  menu=document.createElement('div');menu.className='lc-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label','小黑貓');
+  const items=[['feed','🐟 餵零食'],['wand','🪶 玩逗貓棒']];if(mode==='fab')items.push(['chat','💬 開啟對話']);
+  menu.innerHTML=items.map(i=>'<button type="button" role="menuitem" data-act="'+i[0]+'">'+i[1]+'</button>').join('');
+  document.body.appendChild(menu);const w=menu.offsetWidth,h=menu.offsetHeight;
+  menu.style.left=Math.max(8,Math.min(x,innerWidth-w-8))+'px';menu.style.top=Math.max(8,Math.min(touch?y-h-24:y,innerHeight-h-8))+'px';
+  menu.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;closeMenu();if(b.dataset.act==='feed')feed();else if(b.dataset.act==='wand')startWand();else{const f=root.querySelector('.lc-fab');if(f)f.click()}});
+  document.addEventListener('pointerdown',onDocDown,true);document.addEventListener('keydown',onMenuKey,true);addEventListener('blur',closeMenu);addEventListener('scroll',closeMenu,true);addEventListener('resize',closeMenu);
+  menu.querySelector('button').focus()}
+ const petHit=t=>t.closest&&t.closest('.lc-cat,.lc-fab');
+ root.addEventListener('contextmenu',e=>{if(!petHit(e.target))return;e.preventDefault();clearTimeout(lp);
+  let x=e.clientX,y=e.clientY;if(!x&&!y){const r=catEl().getBoundingClientRect();x=r.left+r.width/2;y=r.top+r.height/2}openMenu(x,y,false)});
+ root.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'||!petHit(e.target))return;const x=e.clientX,y=e.clientY;clearTimeout(lp);lp=setTimeout(()=>{lpAt=Date.now();openMenu(x,y,true)},550);
+  const stop=ev=>{if(ev.type==='pointermove'&&Math.hypot(ev.clientX-x,ev.clientY-y)<10)return;clearTimeout(lp);['pointermove','pointerup','pointercancel'].forEach(t=>root.removeEventListener(t,stop))};
+  ['pointermove','pointerup','pointercancel'].forEach(t=>root.addEventListener(t,stop))});
+ root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  armIdle();
- root.addEventListener('click',e=>{if(e.target.closest('[data-feed]')){feed();return}const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+ root.addEventListener('click',e=>{const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
