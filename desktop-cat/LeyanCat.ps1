@@ -280,11 +280,11 @@ public class LeyanCatPet : Form
         if (mode == 1) { FeedStep(); if (Top != ground) Top = ground; Render(); return; }
         if (mode == 2) { PlayStep(wa, ground); Render(); return; }
         if (Top != ground) Top = ground;
-        // 電腦 3 分鐘沒人動 → 睡覺；有人動滑鼠鍵盤 → 醒來
+        // 電腦 30 秒沒人動 → 睡覺；有人動滑鼠鍵盤 → 醒來
         if (tick % 25 == 0)
         {
             uint idle = IdleMs();
-            if (idle > 180000 && state != 3) { SetState(3, 999999); idleSleep = true; bubbleTicks = 0; }
+            if (idle > 30000 && state != 3) { SetState(3, 999999); idleSleep = true; bubbleTicks = 0; }
             else if (idle < 1500 && idleSleep) { idleSleep = false; SetState(1, resting ? 99999 : 60); Say("喵…（伸懶腰）", 50); }
         }
         if (!resting && state != 3 && --stateTicks <= 0)
