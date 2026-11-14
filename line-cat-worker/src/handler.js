@@ -161,12 +161,14 @@ async function lineName(env, userId) {
 const chatLink = (dest, userId) => 'https://chat.line.biz/' + dest;
 
 // ---------- Telegram ----------
+const clean = v => String(v || '').trim().replace(/^["']|["']$/g, '').trim();
+let lastTgError = '';
 async function tg(env, method, payload) {
-  const res = await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/' + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-  if (!res.ok) console.log('Telegram error', method, res.status, await res.text());
+  const res = await fetch('https://api.telegram.org/bot' + clean(env.TELEGRAM_BOT_TOKEN) + '/' + method, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+  if (!res.ok) { let d = ''; try { d = (await res.json()).description || ''; } catch (e) {} lastTgError = res.status + ' ' + d; console.log('Telegram error', method, lastTgError); }
   return res.ok;
 }
-const notify = (env, text) => tg(env, 'sendMessage', { chat_id: env.TELEGRAM_CHAT_ID, text, disable_web_page_preview: true });
+const notify = (env, text) => tg(env, 'sendMessage', { chat_id: clean(env.TELEGRAM_CHAT_ID).replace(/^id[:：]\s*/i, ''), text, disable_web_page_preview: true });
 
 // ---------- 值班狀態（存在 KV）----------
 async function getDuty(env) {
@@ -195,7 +197,7 @@ async function setDuty(env, action, hours) {
   return d.on ? { on: true, until: d.until, untilText: fmt(d.until) } : { on: false };
 }
 const json = (o, status = 200) => new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json; charset=utf-8' } });
-const authed = (req, env) => !!env.DUTY_KEY && (req.headers.get('Authorization') || '') === 'Bearer ' + env.DUTY_KEY;
+const authed = (req, env) => !!env.DUTY_KEY && (req.headers.get('Authorization') || '') === 'Bearer ' + clean(env.DUTY_KEY);
 
 // OpenClaw 呼叫：POST /duty  標頭 Authorization: Bearer <DUTY_KEY>  內容 {"action":"on","hours":4} / {"action":"off"} / {"action":"status"}
 async function handleDuty(req, env) {
@@ -223,10 +225,10 @@ async function forwardImage(env, messageId, caption) {
   const r = await fetch('https://api-data.line.me/v2/bot/message/' + messageId + '/content', { headers: { Authorization: 'Bearer ' + env.LINE_CHANNEL_ACCESS_TOKEN } });
   if (!r.ok) return notify(env, caption + '\n（截圖下載失敗，請到 LINE 後台查看）');
   const fd = new FormData();
-  fd.append('chat_id', String(env.TELEGRAM_CHAT_ID));
+  fd.append('chat_id', clean(env.TELEGRAM_CHAT_ID).replace(/^id[:：]\s*/i, ''));
   fd.append('caption', caption.slice(0, 1000));
   fd.append('photo', new Blob([await r.arrayBuffer()], { type: r.headers.get('content-type') || 'image/jpeg' }), 'screenshot.jpg');
-  const res = await fetch('https://api.telegram.org/bot' + env.TELEGRAM_BOT_TOKEN + '/sendPhoto', { method: 'POST', body: fd });
+  const res = await fetch('https://api.telegram.org/bot' + clean(env.TELEGRAM_BOT_TOKEN) + '/sendPhoto', { method: 'POST', body: fd });
   if (!res.ok) await notify(env, caption + '\n（截圖轉發失敗，請到 LINE 後台查看）');
 }
 
@@ -280,14 +282,24 @@ async function handleFetch(req, env, ctx) {
   if (req.method === 'POST' && url.pathname === '/telegram') return handleTelegram(req, env);
   if (url.pathname === '/setup') {
     // 只發一則測試通知；不會更動 bot 設定，所以可以安心用 OpenClaw 的 bot
-    if (!env.DUTY_KEY || url.searchParams.get('key') !== env.DUTY_KEY) return new Response('forbidden', { status: 403 });
+    if (!env.DUTY_KEY || (url.searchParams.get('key') || '').trim() !== clean(env.DUTY_KEY)) return new Response('forbidden', { status: 403 });
     let ok = await notify(env, '🐾 小黑貓已連上！之後 LINE@ 看不懂的訊息會從這裡通知你。');
     let extra = '';
     if (ok && env.TELEGRAM_RECEIVE === 'true' && env.TELEGRAM_WEBHOOK_SECRET) {
       ok = await tg(env, 'setWebhook', { url: url.origin + '/telegram', secret_token: env.TELEGRAM_WEBHOOK_SECRET, allowed_updates: ['message'] });
       extra = '（已設定專屬 bot 接收指令）';
     }
-    return txt(ok ? '完成！請到 Telegram 看小黑貓的測試訊息。' + extra : 'Telegram 發送失敗，請檢查 TELEGRAM_BOT_TOKEN 和 TELEGRAM_CHAT_ID。');
+    if (ok) return txt('完成！請到 Telegram 看小黑貓的測試訊息。' + extra);
+    const e = lastTgError, tok = clean(env.TELEGRAM_BOT_TOKEN), id = clean(env.TELEGRAM_CHAT_ID).replace(/^id[:：]\s*/i, '');
+    let why = '';
+    if (!tok) why = '沒有讀到 TELEGRAM_BOT_TOKEN（名稱要完全一樣，大寫加底線）。';
+    else if (!id) why = '沒有讀到 TELEGRAM_CHAT_ID（名稱要完全一樣，大寫加底線）。';
+    else if (/^401|^404/.test(e)) why = 'bot token 不對。請到 @BotFather → /mybots → 選 bot → API Token 重新複製（整串，包含中間的冒號）。';
+    else if (/chat not found/i.test(e)) why = '找不到這個 Telegram Id。請確認：1) 填的是 @userinfobot 回你的「Id」數字；2) 你有在這個 bot 的對話按過「開始」或傳過訊息。';
+    else if (/blocked/i.test(e)) why = '你封鎖了這個 bot，請在 Telegram 解除封鎖。';
+    else if (/chat_id is empty|invalid/i.test(e)) why = 'TELEGRAM_CHAT_ID 格式不對，只要填數字。';
+    else why = '其他原因，請把下面這行錯誤訊息給 Claude 看。';
+    return txt('Telegram 發送失敗：' + why + '\n\nTelegram 回應：' + e + '\n（目前讀到的 Id：' + id.replace(/\d(?=\d{3})/g, '*') + '，token 長度：' + tok.length + '）');
   }
   if (url.pathname === '/health') {
     await refresh(env);
