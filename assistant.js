@@ -36,7 +36,7 @@ function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));c
  const lc=(t.match(/e\d{3}|d11|aa(?![a-z])/g)||[]);
  const faqs=faqPool.map(p=>{let s=0;p.toks.forEach(k=>{if(/^\d{4}$/.test(k)){if(codes.includes(k))s+=60}else if(lc.includes(k))s+=40;else if(k.length>=3&&t.includes(k))s+=k.length*2});return {f:p.f,score:s}}).filter(r=>r.score>=8).sort((a,b)=>b.score-a.score);
  let doc=null;if(codes.length&&!faqs.some(r=>r.score>=60)){doc=pool.find(d=>d.id==='card-reader-errors'&&codes.some(c=>d.keywords.includes(c)))||null}
- const lines=raw.split(/\n+/).map(x=>x.trim()).filter(x=>x&&(codes.some(c=>x.includes(c))||/錯誤|找不到|失敗|無法|不正確|請先|無卡號/.test(x))).slice(0,3);
+ const lines=raw.split(/\n+/).map(x=>x.trim().replace(/([\u3000-\u303f\u4e00-\u9fff\uff00-\uffef])\s+(?=[\u3000-\u303f\u4e00-\u9fff\uff00-\uffef])/g,'$1')).filter(x=>x&&(codes.some(c=>x.includes(c))||/錯誤|找不到|失敗|無法|不正確|請先|無卡號/.test(x))).slice(0,3);
  return {codes,faqs:faqs.slice(0,2),doc,lines}}
 let ocrLib=null;
 function loadOcr(){if(ocrLib)return ocrLib;ocrLib=new Promise((res,rej)=>{if(window.Tesseract)return res(window.Tesseract);const sc=document.createElement('script');sc.src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';sc.onload=()=>res(window.Tesseract);sc.onerror=()=>{ocrLib=null;rej(new Error('load'))};document.head.appendChild(sc)});return ocrLib}
