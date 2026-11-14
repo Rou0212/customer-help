@@ -47,7 +47,7 @@ function popupCode(raw){
   const m=line.match(/(?:^|[^\d])([0-9]{4})\s*[-－—]/);
   if(m&&KNOWN_CODES.has(m[1]))return m[1]
  }
- const codes=[...new Set((raw.match(/(?<!\d)\d{4}(?!\d)/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
+ const codes=[...new Set((String(raw).match(/(^|\D)(\d{4})(?!\d)/g)||[]).map(x=>x.slice(-4)).filter(c=>KNOWN_CODES.has(c)))];
  return codes.length===1?codes[0]:''
 }
 async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T.createWorker(['chi_tra','eng']);
