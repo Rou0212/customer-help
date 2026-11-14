@@ -4,6 +4,7 @@
 
 1. 佳柔叫你時，**切換小黑貓的值班狀態**
 2. 佳柔教你新題目時，**把它加進常見問題 `faq.js`**，推上 GitHub
+3. 佳柔要你微調時，**調整關鍵字（`assistant.js` 的 `INTENTS`）或問題類型分類（`faq.js` 的 `PROBLEM_TYPES`）**
 
 小黑貓的通知（看不懂的訊息、客戶要找真人、截圖、自動回覆紀錄）會用你的 Telegram bot 發給佳柔。那些訊息是 Worker 用你的 token 發的，你不一定看得到；佳柔會「回覆」那則通知來告訴你要做什麼。如果你看不到被回覆的內容，請她把客戶的原話貼給你。
 
@@ -77,6 +78,36 @@ node -e "eval(require('fs').readFileSync('faq.js','utf8')+';const ids=FAQS.map(f
 
 ---
 
+## 二之一、調整「客戶怎麼說會對到哪份手冊」
+
+檔案：`assistant.js` 最上面的 `const INTENTS={...}`。每一行是一份手冊的 id，後面是客戶可能會說的詞：
+
+```js
+'hca-unlock':['醫師卡鎖住','解卡','解鎖','PUK'],
+```
+
+- 小黑貓看到客戶訊息裡有這些詞，就會優先開那份手冊。詞越長、越具體，越不會誤判。
+- 手冊 id 和站號的對照在 `manuals.js` 的 `STATION`（例如 `'hca-unlock':'D02'`）。
+- 只能**加或改詞**，不要刪掉整行、不要改手冊 id、不要動 `assistant.js` 其他地方。
+- 檢查：`node -e "const s=require('fs').readFileSync('assistant.js','utf8');eval(s.match(/const INTENTS=\{[\s\S]*?\};/)[0]+';console.log(\"OK\",Object.keys(INTENTS).length,\"份手冊\")')"`
+
+## 二之二、調整問題類型分類
+
+檔案：`faq.js` 最上面的 `const PROBLEM_TYPES=[...]`，就是網站上「我遇到的是…」那幾個按鈕。
+
+```js
+{id:'hw',name:'硬體問題',hint:'讀卡機、健保卡、印表機、電腦、停電',color:'#C0392B',icon:'hw',groups:['card','pc'],cats:['設備排解']},
+```
+
+- `name`、`hint`：按鈕上的字，可以改。
+- `groups`：這一類包含哪些常見問題分類（`card` `reg` `nhi` `vpn` `emr` `pc`）。
+- `cats`：這一類包含哪些手冊路線（`健保作業` `VPN 相關操作` `上傳作業` `電子病歷` `設備排解` `Google 日曆`）。
+- 要把某一題換到別的類型，改那一題的 `group` 就好，不用動這裡。
+- 不要改 `id` 和 `icon`（網站連結和圖示會用到）。每個 `groups` 的分類最好只出現在一個類型裡。
+- 改完一樣用第二節的指令檢查 `faq.js`。
+
+---
+
 ## 三、絕對不能放進常見問題的內容
 
 - 請客戶提供或傳送**密碼、PIN 碼、PUK、驗證碼、身分證字號**（小黑貓會自動擋掉含這類字眼的題目，但請一開始就不要寫）
@@ -91,6 +122,6 @@ node -e "eval(require('fs').readFileSync('faq.js','utf8')+';const ids=FAQS.map(f
 
 ## 四、你不需要做的事
 
-- 不用改 `line-cat-worker/` 裡的程式，也不用重新部署 Cloudflare。改 `faq.js` 就好。
+- 不用改 `line-cat-worker/` 裡的程式，也不用重新部署 Cloudflare。改 `faq.js`、`assistant.js` 的 `INTENTS` 就好。
 - 不要回覆 LINE 客戶；也不要用 bot token 設定 webhook。
 - 不要處理客戶傳來的截圖內容（可能有病人資料）。
