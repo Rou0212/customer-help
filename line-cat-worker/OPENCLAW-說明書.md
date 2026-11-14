@@ -125,3 +125,17 @@ node -e "eval(require('fs').readFileSync('faq.js','utf8')+';const ids=FAQS.map(f
 - 不用改 `line-cat-worker/` 裡的程式，也不用重新部署 Cloudflare。改 `faq.js`、`assistant.js` 的 `INTENTS` 就好。
 - 不要回覆 LINE 客戶；也不要用 bot token 設定 webhook。
 - 不要處理客戶傳來的截圖內容（可能有病人資料）。
+
+---
+
+## 五、桌面版小黑貓（desktop-cat/）
+
+在 Windows 桌面走動的小黑貓，原始碼在 `desktop-cat/LeyanCat.ps1`。佳柔要你改桌面版（例如新增互動、改台詞）時才動它，規則見 `desktop-cat/README.md`：
+
+- 只能用 C# 5 語法；存檔維持 UTF-8 含 BOM、CRLF 換行。
+- 你在 NAS 上沒辦法實測，改完要請佳柔在 Windows 上雙擊 `啟動小黑貓.bat` 試跑；跳出「啟動失敗」就請她把 `LeyanCat-error.log` 給你。
+- 不要加入任何會上傳資料、讀取診所電腦檔案或自動執行下載程式的功能。
+
+## 六、LINE@ 小黑貓（line-cat-worker/）
+
+**目前沒有使用。** 不要修改 `line-cat-worker/` 裡的程式，也不要切換值班，除非佳柔說要重新啟用。
