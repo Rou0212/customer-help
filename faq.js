@@ -1,5 +1,13 @@
 // 常見問題排解（整理自 LINE 官方帳號的預設訊息）。網站與小黑貓助手共用。
 // 新增一題：在 FAQS 加一筆 {id, group, title, tags, steps 或 text, doc(相關手冊 id), img(圖卡)}
+// 問題類型：網站上方「我遇到的是…」的分類。groups＝包含哪些常見問題分類，cats＝包含哪些手冊路線
+const PROBLEM_TYPES=[
+{id:'hw',name:'硬體問題',hint:'讀卡機、健保卡、印表機、電腦、停電',color:'#C0392B',icon:'hw',groups:['card','pc'],cats:['設備排解']},
+{id:'nhi',name:'健保申報',hint:'申報、抽審、申覆、牙位更正',color:'#2F6FB0',icon:'nhi',groups:['nhi'],cats:['健保作業']},
+{id:'reg',name:'掛號・帳務',hint:'掛號、補卡、欠卡、退掛',color:'#8A5A00',icon:'reg',groups:['reg'],cats:[]},
+{id:'net',name:'網路・VPN・上傳',hint:'網路不通、VPN、影像與檢驗上傳',color:'#1F7A6E',icon:'net',groups:['vpn'],cats:['VPN 相關操作','上傳作業']},
+{id:'emr',name:'電子病歷・表單',hint:'簽章、牙周紀錄表、表單',color:'#6B4FA8',icon:'emr',groups:['emr'],cats:['電子病歷']},
+{id:'cal',name:'Google 日曆',hint:'醫師共用、手機看不到約診',color:'#3E7D2E',icon:'cal',groups:[],cats:['Google 日曆']}];
 const FAQ_GROUPS=[
 {id:'card',name:'讀卡機與健保卡',color:'#C0392B'},
 {id:'reg',name:'掛號・補卡・帳務',color:'#8A5A00'},
