@@ -137,12 +137,17 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
  let runnerEl=null;const catEl=()=>runnerEl?runnerEl.querySelector('.lc-cat'):root.querySelector('.lc-cat');
- let idleT=0,actT=0,acting='',lastLine=-1;
+ let idleT=0,actT=0,acting='',lastLine=-1,lastAct=Date.now();
  const pick=a=>{let i;do{i=Math.floor(Math.random()*a.length)}while(a.length>1&&i===lastLine);lastLine=i;return a[i]};
- function endAct(){clearTimeout(actT);root.classList.remove('lc-licking','lc-feeding');acting=''}
- function armIdle(){clearTimeout(idleT);idleT=setTimeout(()=>{if(!root.isConnected)return;if(acting||document.hidden||!motionOK()){armIdle();return}
+ function endAct(){clearTimeout(actT);root.classList.remove('lc-licking','lc-feeding','lc-sleeping');acting=''}
+ // 睡覺：閒置 45 秒以上就打瞌睡，冒出 Zzz；碰一下就醒
+ function sleep(){const c=root.querySelector('.lc-cat');if(c&&!c.querySelector('.lc-zzz')){const NS='http://www.w3.org/2000/svg',g=document.createElementNS(NS,'g');g.setAttribute('class','lc-zzz');[[84,34,12],[94,24,15],[104,13,18]].forEach(([x,y,f],i)=>{const t=document.createElementNS(NS,'text');t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('font-size',f);t.style.animationDelay=(i*.9)+'s';t.textContent='z';g.appendChild(t)});c.appendChild(g)}
+  acting='sleep';root.classList.add('lc-sleeping')}
+ function armIdle(){clearTimeout(idleT);idleT=setTimeout(()=>{if(!root.isConnected)return;if(acting||document.hidden){armIdle();return}
+  if(Date.now()-lastAct>45000){sleep();return}
+  if(!motionOK()){armIdle();return}
   acting='lick';root.classList.add('lc-licking');actT=setTimeout(()=>{endAct();armIdle()},2900)},10000+Math.random()*6000)}
- function wake(){if(acting==='lick')endAct();armIdle()}
+ function wake(){lastAct=Date.now();if(acting==='sleep'){endAct();if(Math.random()<.5)petSay(Math.random()<.5?'喵…（伸懶腰）':'嗯？我醒了！',1800)}else if(acting==='lick')endAct();armIdle()}
  ['pointerdown','keydown','input'].forEach(ev=>root.addEventListener(ev,wake,true));
  // 貓旁邊的短話泡泡
  let sayEl=null,sayT=0;

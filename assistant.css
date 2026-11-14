@@ -81,3 +81,12 @@ body.modal-open .lc-fab-wrap{display:none}
 .lc-playing .lc-cat{visibility:hidden}
 .lc-runner{position:absolute;left:0;top:0;width:76px;height:76px;pointer-events:none;will-change:transform}.lc-runner-in{width:100%;height:100%}.lc-runner .lc-cat{display:block;width:100%;height:100%;visibility:visible;filter:drop-shadow(0 6px 6px #0003)}
 .lc-runner.run .lc-cat{animation:lc-bob .28s ease-in-out infinite}.lc-runner.run .lc-tail{animation:lc-wag .28s ease-in-out infinite}.lc-runner.pounce .lc-cat{animation:lc-pounce .5s ease-out 1}.lc-runner.pounce .lc-paw{animation:lc-swat .5s ease-out 1}
+.lc-zzz text{fill:#5B6470;font-family:system-ui,sans-serif;font-weight:800;opacity:0}
+.lc-root.lc-sleeping .lc-eyes{animation:none;transform:scaleY(.12)}
+.lc-root.lc-sleeping .lc-tail{animation:none}
+.lc-root.lc-sleeping .lc-head-g{transform-origin:58px 80px;transform:translateY(4px) rotate(-4deg)}
+@media(prefers-reduced-motion:no-preference){.lc-root.lc-sleeping .lc-head-g{animation:lc-breathe 3.2s ease-in-out infinite}.lc-root.lc-sleeping .lc-zzz text{animation:lc-z 2.7s linear infinite}}
+@media(prefers-reduced-motion:reduce){.lc-root.lc-sleeping .lc-zzz text{opacity:.8}}
+@keyframes lc-breathe{0%,100%{transform:translateY(4px) rotate(-4deg)}50%{transform:translateY(6px) rotate(-4deg)}}
+@keyframes lc-z{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(10px,-14px)}}
+
