@@ -83,7 +83,7 @@ body.modal-open{overflow:hidden}
 <div id="panel-docs" role="tabpanel" aria-labelledby="tab-docs" hidden><p class="panel-hint">每份手冊都有站號。客服請你看「<b>D01</b>」，就在搜尋框輸入 D01。</p><p class="lines-label">依手冊路線找</p><nav id="chips" class="lines" aria-label="手冊路線"></nav><div id="cards" class="routes"></div></div>
 <div class="empty" id="empty" hidden><p>找不到相關內容，試試其他關鍵字、錯誤代碼或站號。</p><button type="button" id="reset">清除搜尋</button></div>
 <section class="support"><span class="support-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="support-text"><strong>轉乘客服</strong>照著做還是卡住？記下錯誤訊息和站號，客服很樂意協助您。</span><a class="button" href="tel:0422518815,9">撥打 04-2251-8815 分機 9</a></section>
-<footer>手冊已遮蔽個人資料與憑證資訊；分區文件為使用者提供的整理版。流程僅供參考，實際作業以官方公告與現行系統畫面為準。</footer><noscript>請開啟 JavaScript 以使用搜尋、分類與 PDF 閱讀器。</noscript>
+<footer>部分操作手冊已遮蔽個人資料；全聯會實用手冊為使用者提供原檔，分區文件為整理版。流程僅供參考，實際作業以官方公告與現行系統畫面為準。</footer><noscript>請開啟 JavaScript 以使用搜尋、分類與 PDF 閱讀器。</noscript>
 </main>
 <div id="lc" class="lc-fab-wrap"></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
@@ -103,7 +103,7 @@ const cats=['全部','健保作業','VPN 相關操作','上傳作業','電子病
 const norm=s=>s.toLowerCase().replace(/\s/g,'').replace(/臺/g,'台').replace(/申復/g,'申覆').replace(/日曆/g,'行事曆');
 const mb=d=>(d.bytes/1048576).toFixed(1)+' MB';
 // ---- 路線與站號：新增手冊時，在 STATION 補上站號、在 PICS 選三張步驟圖 ----
-const PICS={'nhi-claim':['records','chart','upload'],'nhi-review':['download','xray','upload'],'nhi-appeal':['folder','toggle','upload'],'nhi-dispute':['toggle','form','send'],'nhi-doctor-access':['login','idcard','toggle'],'nhi-clinic-hours':['login','form','toggle'],'nhi-lab-upload':['login','upload','search'],'nhi-image-upload':['xray','upload','search'],'emr-sign':['cloud','card','pen'],'card-reader-errors':['alert','book','card'],'hca-unlock':['login','shield','unlock'],'ic-card-incident-form':['form','stamp','send'],'tooth-correction':['download','search','upload'],'edge-ie-mode':['toggle','form','login'],'perio-chart':['idcard','toggle','download'],'google-members':['calendar','idcard','mail'],'google-sync':['mail','phone','calendar']};
+const PICS={'nhi-claim':['records','chart','upload'],'nhi-review':['download','xray','upload'],'nhi-appeal':['folder','toggle','upload'],'nhi-dispute':['toggle','form','send'],'nhi-dentist-handbook-2026':['book','search','shield'],'nhi-doctor-access':['login','idcard','toggle'],'nhi-clinic-hours':['login','form','toggle'],'nhi-lab-upload':['login','upload','search'],'nhi-image-upload':['xray','upload','search'],'emr-sign':['cloud','card','pen'],'card-reader-errors':['alert','book','card'],'hca-unlock':['login','shield','unlock'],'ic-card-incident-form':['form','stamp','send'],'tooth-correction':['download','search','upload'],'edge-ie-mode':['toggle','form','login'],'perio-chart':['idcard','toggle','download'],'google-members':['calendar','idcard','mail'],'google-sync':['mail','phone','calendar']};
 const ICON={
 records:'<rect x="30" y="8" width="40" height="56" rx="3"/><path d="M38 22h24M38 32h24M38 42h14"/><circle cx="68" cy="54" r="11" fill="#F3F4F2"/><path d="m62 54 4 4 7-8"/>',
 chart:'<path d="M22 62h56M22 62V12"/><rect x="31" y="40" width="9" height="22"/><rect x="46" y="29" width="9" height="33"/><rect x="61" y="18" width="9" height="44"/>',
