@@ -99,6 +99,7 @@ async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T
  return {t:(await ocrWorker.recognize(c)).data.text||'',how:'full'}}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
 function rank(q){const n=norm(q);if(!n)return [];
+ const policyPages=typeof NHI_CODE_PAGES!=='undefined'&&NHI_CODE_PAGES[String(q).trim().toUpperCase()];if(policyPages){const d=pool.find(x=>x.id==='nhi-dentist-handbook-2026');if(d)return [{d,score:100}]}
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
  return prepared.map(p=>{let s=0;
   (INTENTS[p.d.id]||[]).forEach(ph=>{const k=norm(ph);if(n.includes(k))s+=(p.d.parent?20:10)+k.length});
@@ -127,15 +128,15 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或文件代碼…">'+
  '<button type="button" class="lc-pic" aria-label="在本機辨識已遮蔽個資的錯誤畫面"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
- const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');
+ const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');let lastQuestion='';const policyPage=d=>d.id==='nhi-dentist-handbook-2026'&&typeof NHI_CODE_PAGES!=='undefined'?(NHI_CODE_PAGES[lastQuestion.trim().toUpperCase()]||[])[0]||1:1;
  function say(html,who){const el=document.createElement('div');el.className='lc-msg lc-'+(who||'bot');el.innerHTML=html;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
- function open(d){const url=urlOf(d);if(opt.onOpen){opt.onOpen(d,url);return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
- function card(d){const l=lineOf(d);return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span class="lc-code" style="background:'+l.color+'">'+codeOf(d)+'</span><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
+ function open(d){const url=urlOf(d);if(opt.onOpen){opt.onOpen(d,url,policyPage(d));return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
+ function card(d){const l=lineOf(d);return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span class="lc-code" style="background:'+l.color+'">'+codeOf(d)+'</span><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(d.id==='nhi-dentist-handbook-2026'&&policyPage(d)>1?'<small>對應 PDF 第 '+policyPage(d)+' 頁；請核對原文與現行公告。</small>':'')+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
  function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')+(humanFaq(f)?supportHtml():'')}
  function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
  function docChoice(d){return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">操作手冊：'+esc(codeOf(d))+' '+esc(d.title)+'</button>'}
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
- function ask(q){q=q.trim();if(!q)return;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const r=rank(q),fr=rankFaq(q);
+ function ask(q){q=q.trim();if(!q)return;lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const r=rank(q),fr=rankFaq(q);
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
   say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
