@@ -91,3 +91,5 @@ body.modal-open .lc-fab-wrap{display:none}
 @media(prefers-reduced-motion:reduce){.lc-root.lc-sleeping .lc-zzz text{opacity:.8}}
 @keyframes lc-breathe{0%,100%{transform:translateY(4px) rotate(-4deg)}50%{transform:translateY(6px) rotate(-4deg)}}
 @keyframes lc-z{0%{opacity:0;transform:translate(0,0)}20%{opacity:1}100%{opacity:0;transform:translate(10px,-14px)}}
+
+.lc-official{display:block;margin-top:8px;padding:9px 10px;border-radius:9px;background:#E9F1FA;color:#275C9A!important;text-align:center;text-decoration:none;font-size:14px;font-weight:700!important}.lc-official:hover{background:#D8E8F9}

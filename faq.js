@@ -15,11 +15,12 @@ const FAQ_GROUPS=[
 {id:'vpn',name:'VPN 與上傳',color:'#1F7A6E'},
 {id:'emr',name:'電子病歷與表單',color:'#6B4FA8'},
 {id:'pc',name:'電腦與設備',color:'#4A5159'}];
+const OFFICIAL_URLS={'hca-unlock':'https://hca.nat.gov.tw/CertAction/PinAUnlock'};
 const FAQS=[
 // ---- 讀卡機與健保卡 ----
 {id:'4043',group:'card',title:'健保卡錯誤 4043：讀取／寫入異常',tags:'4043 讀取 寫入 異常 晶片',steps:['用乾淨的布擦拭健保卡金屬晶片','把健保卡拔出，再重新正確插入（晶片朝下、面朝自己）','仍然出現 4043，請改用其他讀卡機測試或聯絡客服'],doc:'card-reader-errors',img:'4043'},
 {id:'4061',group:'card',title:'錯誤 4061：網路不通',tags:'4061 網路 不通 斷線 數據機 中華電信',steps:['到機房把數據機重新開機','等 5 分鐘後再試一次','還是不行，請致電中華電信確認網路'],doc:'card-reader-errors',img:'4061'},
-{id:'9043',group:'card',title:'錯誤 9043：醫師 PIN 碼鎖住',tags:'9043 pin 鎖住 鎖卡 三次 輸入錯誤 解卡',steps:['PIN 碼累積輸入錯誤三次，醫師卡就會被鎖住','由醫師本人到醫事憑證管理中心進行解卡','網址：hca.nat.gov.tw（變更 PIN 碼與解鎖卡作業）'],doc:'hca-unlock',img:'9043'},
+{id:'9043',group:'card',title:'錯誤 9043：醫師 PIN 碼鎖住',tags:'9043 pin 鎖住 鎖卡 三次 輸入錯誤 解卡',steps:['PIN 碼累積輸入錯誤三次，醫師卡就會被鎖住','由醫師本人到醫事憑證管理中心進行解卡','點下方「前往官方解鎖卡網站」辦理；PIN、PUK 請勿提供給小黑貓'],doc:'hca-unlock',img:'9043'},
 {id:'9039',group:'card',title:'錯誤 9039：醫師 PIN 碼輸入錯誤',tags:'9039 pin 錯誤 醫師認證',steps:['重新做一次醫師認證','由醫師本人輸入正確的 PIN 碼','注意：連續錯三次會鎖卡（9043）'],doc:'hca-unlock'},
 {id:'restart-console',group:'card',title:'讀卡機沒反應：重啟雲端主控台',tags:'重啟雲端主控台 讀卡機 沒反應 認證失敗 系統管理員',steps:['把醫師卡和健保卡兩張卡片都插好','在桌面的【重啟雲端主控台】按右鍵 →【以系統管理員身分執行】','回到系統主畫面，重新做 IC 認證及醫師認證'],doc:'card-reader-errors',img:'restart-console'},
 {id:'usb-replug',group:'card',title:'晶片讀卡機異常：重新插拔 USB',tags:'晶片讀卡機 usb 拔掉 插回 讀卡機異常',steps:['先把卡片拔掉','兩台讀卡機的 USB 都拔掉，放置 1 分鐘再插回去','放回醫師卡與健保卡','執行桌面【重啟雲端主控台】，再回主畫面做 IC 認證及醫師認證'],doc:'card-reader-errors',img:'usb-replug'},
