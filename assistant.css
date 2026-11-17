@@ -1,4 +1,4 @@
-.lc-root{--lc-ink:#15191E;--lc-muted:#4A5159;--lc-line:#DCE0E4;--lc-panel:#F3F4F2;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--lc-ink)}
+.lc-root{--lc-ink:#17213B;--lc-muted:#526077;--lc-line:#DCE2ED;--lc-panel:#F1F5FB;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--lc-ink)}
 .lc-root *{box-sizing:border-box}.lc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .lc-cat{display:block;width:100%;height:auto}
 @media(prefers-reduced-motion:no-preference){.lc-eyes{transform-origin:58px 52px;animation:lc-blink 4.5s infinite}.lc-tail{transform-origin:84px 96px;animation:lc-tail 2.4s ease-in-out infinite}}
@@ -33,6 +33,7 @@ body.modal-open .lc-fab-wrap{display:none}
 /* 獨立小視窗 */
 .lc-mode-page{height:100%}.lc-mode-page .lc-panel{height:100%;border:0;border-radius:0}
 .lc-faq{margin-top:8px;padding:10px 12px;border:2px solid var(--c);border-radius:12px;background:#fff}.lc-faq b{display:block;font-size:15px}.lc-faq p{margin:4px 0 0;font-size:14px}.lc-faq ol{margin:6px 0 0;padding-left:20px;font-size:14px}.lc-faq li+li{margin-top:3px}.lc-img{display:block;margin-top:8px}.lc-img img{display:block;width:100%;border:1px solid var(--lc-line);border-radius:8px}.lc-faqbtn{display:block;width:100%;margin-top:6px;text-align:left;padding:8px 10px;border:1.5px solid var(--lc-ink);border-radius:10px;background:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}.lc-faqbtn:hover{background:#FAFAF9}
+.lc-choice{display:block;width:100%;margin-top:8px;text-align:left;padding:10px 12px;border:1px solid var(--lc-line);border-radius:11px;background:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer}.lc-choice:hover{border-color:#3468A8;background:#F7FAFF}.lc-choice-hint{display:block;margin-top:10px;font-size:12px;color:var(--lc-muted)}
 .lc-shot{display:block;max-width:220px;max-height:180px;border-radius:8px}.lc-quote{margin:6px 0;padding:6px 10px;border-left:0;background:#fff;border-radius:8px;font-size:13px;color:var(--lc-muted)}.lc-drop{outline:3px dashed #1D4F91;outline-offset:-6px}
 .lc-quick{scrollbar-width:none}.lc-quick::-webkit-scrollbar{display:none}
 /* 小黑貓互動：閒置舔毛、餵零食（尊重「減少動態效果」設定） */

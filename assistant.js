@@ -1,4 +1,4 @@
-// 樂衍小黑貓：依文字或語音找出手冊並開啟。需先載入 manuals.js。
+// 樂衍小黑貓：依文字或語音提出候選問題，使用者確認後才顯示答案或手冊。需先載入 manuals.js。
 // 用法：LeyanCat.mount(元素, {mode:'page'|'fab', onOpen:function(doc,url){...}})
 (function(){
 const BASE=new URL('./',location.href).href;
@@ -124,7 +124,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字或用說的，查網站手冊與錯誤代碼；個案請轉人工。</span><small class="lc-hint">對我按右鍵（手機長按）可以餵零食、玩逗貓棒喔。</small></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
- '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或站號…">'+
+ '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或文件代碼…">'+
  '<button type="button" class="lc-pic" aria-label="在本機辨識已遮蔽個資的錯誤畫面"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
  const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');
@@ -132,13 +132,12 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function open(d){const url=urlOf(d);if(opt.onOpen){opt.onOpen(d,url);return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
  function card(d){const l=lineOf(d);return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span class="lc-code" style="background:'+l.color+'">'+codeOf(d)+'</span><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'}
  function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')+(humanFaq(f)?supportHtml():'')}
+ function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
+ function docChoice(d){return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">操作手冊：'+esc(codeOf(d))+' '+esc(d.title)+'</button>'}
+ function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
  function ask(q){q=q.trim();if(!q)return;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const r=rank(q),fr=rankFaq(q);
-  if(fr.length&&(!r.length||(fr[0].score*1.2>=r[0].score&&r[0].score<100))){const more=fr.slice(1,3).filter(x=>x.score>=fr[0].score*0.7);say('喵～這個我知道：'+faqHtml(fr[0].f)+(more.length?'<p class="lc-alt">也可能是：</p>'+more.map(x=>'<button type="button" class="lc-faqbtn" data-faq="'+x.f.id+'">'+esc(x.f.title)+'</button>').join(''):''));return}
-  if(!r.length){say('喵…我找不到相關的手冊。可以換個說法或輸入錯誤代碼。'+supportHtml());return}
-  const top=r[0].d,alts=r.slice(1,3).filter(x=>x.score>=r[0].score*0.6).map(x=>x.d);
-  const rf=fr.length&&fr[0].score>=r[0].score*0.5?fr[0].f:null;
-  const m=say('找到了！幫你打開 <b>'+codeOf(top)+' '+esc(top.title)+'</b>'+card(top)+(alts.length?'<p class="lc-alt">不是這份？也可能是：</p>'+alts.map(card).join(''):'')+(rf?'<p class="lc-alt">相關排解：</p><button type="button" class="lc-faqbtn" data-faq="'+rf.id+'">'+esc(rf.title)+'</button>':''));
-  setTimeout(()=>{if(!open(top))m.insertAdjacentHTML('beforeend','<p class="lc-alt">瀏覽器擋住了自動開啟，請點上面的手冊。</p>')},700)}
+  if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
+  say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
  let runnerEl=null;const catEl=()=>runnerEl?runnerEl.querySelector('.lc-cat'):root.querySelector('.lc-cat');
@@ -227,18 +226,16 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   ['pointermove','pointerup','pointercancel'].forEach(t=>root.addEventListener(t,stop))});
  root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  armIdle();
- root.addEventListener('click',e=>{const fb=e.target.closest('.lc-faqbtn');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+ root.addEventListener('click',e=>{const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d)say('妳選的是這份手冊；點開即可查看內容：'+card(d));return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
   let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
-  if(how==='unclear'){wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我馬上告訴你怎麼處理。';log.scrollTop=log.scrollHeight;return}
+  if(how==='unclear'){wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我再列出可能的主題讓你確認。';log.scrollTop=log.scrollHeight;return}
   const a=analyzeScreen(text);
-  if(!a.faqs.length&&!a.doc){wait.innerHTML='喵…我看不出是哪個問題。'+(a.lines.length?'我看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'')+'可以打字告訴我錯誤代碼。'+supportHtml();return}
-  let h=(how==='full'?'<p class="lc-alt">這張圖我看得不太清楚，以下是最接近的答案；<b>如果不對，請直接打出畫面上的錯誤代碼</b>。</p>':'')+(a.lines.length?'我在畫面上看到：<blockquote class="lc-quote">'+a.lines.map(esc).join('<br>')+'</blockquote>':'');
-  if(a.faqs.length){h+='這是：'+faqHtml(a.faqs[0].f);if(a.faqs[1]&&a.faqs[1].score>=12)h+='<p class="lc-alt">畫面上也有：</p><button type="button" class="lc-faqbtn" data-faq="'+a.faqs[1].f.id+'">'+esc(a.faqs[1].f.title)+'</button>'}
-  else h+='錯誤代碼 '+a.codes.join('、')+' 可以在這份手冊查到處理方式：'+card(a.doc);
-  wait.innerHTML=h;log.scrollTop=log.scrollHeight}
+  if(!a.faqs.length&&!a.doc){wait.innerHTML='我看不出是哪個問題。可以直接輸入畫面上的錯誤代碼。'+supportHtml();return}
+  const docs=a.doc?[{d:a.doc}]:[];
+  wait.innerHTML=(how==='full'?'這張圖辨識得不太清楚，請特別核對下面的主題。':'我找到可能的主題，請先確認：')+choices(a.faqs,docs)+'<small class="lc-choice-hint">都不是？請直接輸入畫面上的錯誤代碼。</small>';log.scrollTop=log.scrollHeight}
  const fileIn=$('.lc-file');$('.lc-pic').onclick=()=>fileIn.click();fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
  root.addEventListener('paste',e=>{const it=[...(e.clipboardData||{}).items||[]].find(x=>x.type&&x.type.startsWith('image/'));if(it){e.preventDefault();look(it.getAsFile())}});
  panel.addEventListener('dragover',e=>{e.preventDefault();panel.classList.add('lc-drop')});panel.addEventListener('dragleave',()=>panel.classList.remove('lc-drop'));
@@ -247,7 +244,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  if(SR){const mic=$('.lc-mic');let rec=null;mic.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='zh-TW';rec.interimResults=true;rec.maxAlternatives=1;let final='';mic.classList.add('on');mic.setAttribute('aria-label','停止語音');input.placeholder='請說話…';
   rec.onresult=ev=>{let t='';for(const r of ev.results){t+=r[0].transcript;if(r.isFinal)final=t}input.value=t};
   rec.onerror=ev=>{if(ev.error==='not-allowed')say('需要允許麥克風權限才能用語音喔。也可以直接打字。')};
-  rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或站號…';rec=null;if((final||input.value).trim())ask(final||input.value)};
+  rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或文件代碼…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
 window.LeyanCat={mount,rank,rankFaq,analyzeScreen,_ocrPrep:{findDialog,prepCrop,popupCode}};
