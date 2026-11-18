@@ -26,7 +26,6 @@ const INTENTS={
 'google-sync':['看不到約診','手機看不到','同步','手機行事曆','行事曆app','接受邀請','邀請信']};
 const pool=documents.filter(d=>!d.region);
 const codeOf=d=>STATION[d.parent||d.id]||'';
-const lineOf=d=>LINES[(d.parent?documents.find(x=>x.id===d.parent):d).category]||{color:'#15191E'};
 const bigrams=s=>{const r=new Set();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r};
 const FQ=(typeof FAQS!=='undefined')?FAQS:[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
 const faqPool=FQ.map(f=>({f,toks:[...new Set(f.tags.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(f.title),bg:bigrams(norm(f.title+(f.text||'')+(f.steps||[]).join('')))}));
@@ -131,10 +130,10 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');let lastQuestion='';const policyPage=d=>d.id==='nhi-dentist-handbook-2026'&&typeof NHI_CODE_PAGES!=='undefined'?(NHI_CODE_PAGES[lastQuestion.trim().toUpperCase()]||[])[0]||1:1;
  function say(html,who){const el=document.createElement('div');el.className='lc-msg lc-'+(who||'bot');el.innerHTML=html;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
  function open(d){const url=urlOf(d);if(opt.onOpen){opt.onOpen(d,url,policyPage(d));return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
- function card(d){const l=lineOf(d);return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span class="lc-code" style="background:'+l.color+'">'+codeOf(d)+'</span><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(d.id==='nhi-dentist-handbook-2026'&&policyPage(d)>1?'<small>對應 PDF 第 '+policyPage(d)+' 頁；請核對原文與現行公告。</small>':'')+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
+ function card(d){return '<a class="lc-doc" href="'+urlOf(d)+'" target="leyan-manual" data-id="'+d.id+'"><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(d.id==='nhi-dentist-handbook-2026'&&policyPage(d)>1?'<small>對應 PDF 第 '+policyPage(d)+' 頁；請核對原文與現行公告。</small>':'')+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
  function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(f.sourceUrl?'<p class="lc-alt"><a href="'+esc(f.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(f.sourceLabel||'查看官方原文')+' ↗</a></p>':'')+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')+(humanFaq(f)?supportHtml():'')}
  function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
- function docChoice(d){return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">操作手冊：'+esc(codeOf(d))+' '+esc(d.title)+'</button>'}
+ function docChoice(d){return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">操作手冊：'+esc(d.title)+'</button>'}
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
  function ask(q){q=q.trim();if(!q)return;lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const r=rank(q),fr=rankFaq(q);
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
