@@ -8,7 +8,7 @@ const PROBLEM_TYPES=[
 {id:'net',name:'網路・VPN・上傳',hint:'網路不通、VPN、影像與檢驗上傳',color:'#1F7A6E',icon:'net',groups:['vpn'],cats:['VPN 相關操作','上傳作業']},
 {id:'emr',name:'電子病歷・表單',hint:'簽章、牙周紀錄表、表單',color:'#6B4FA8',icon:'emr',groups:['emr'],cats:['電子病歷']},
 {id:'settings',name:'系統設定',hint:'醫師、藥品、費用與帳號設定',color:'#7B5682',icon:'reg',groups:['settings'],cats:[]},
-{id:'cal',name:'Google 日曆',hint:'醫師共用、手機看不到約診',color:'#3E7D2E',icon:'cal',groups:[],cats:['Google 日曆']}];
+{id:'cal',name:'Google 日曆',hint:'醫師共用、手機看不到約診',color:'#3E7D2E',icon:'cal',groups:['cal'],cats:['Google 日曆']}];
 const FAQ_GROUPS=[
 {id:'card',name:'讀卡機與健保卡',color:'#C0392B'},
 {id:'reg',name:'掛號・補卡・帳務',color:'#8A5A00'},
@@ -16,7 +16,8 @@ const FAQ_GROUPS=[
 {id:'vpn',name:'VPN 與上傳',color:'#1F7A6E'},
 {id:'emr',name:'電子病歷與表單',color:'#6B4FA8'},
 {id:'pc',name:'電腦與設備',color:'#4A5159'},
-{id:'settings',name:'系統設定',color:'#7B5682'}];
+{id:'settings',name:'系統設定',color:'#7B5682'},
+{id:'cal',name:'Google 行事曆',color:'#3E7D2E'}];
 const OFFICIAL_URLS={'hca-unlock':'https://hca.nat.gov.tw/CertAction/PinAUnlock'};
 const FAQS=[
 // ---- 讀卡機與健保卡 ----
@@ -112,7 +113,7 @@ const FAQS=[
 {id:'batch-28',group:'emr',title:'簽章系統連線逾時或跳錯誤',tags:'簽章 連線逾時 EMR主機 睿傳 錯誤',text:'請先確認簽章主機是否正常開機；如需重新開機，請由診所負責設備的人員操作。錯誤若持續，請找人工客服或簽章廠商協助，不要忽略未確認的簽章錯誤。',doc:'emr-sign'},
 {id:'batch-29',group:'settings',title:'新增醫師或支援醫師設定',tags:'新增醫師 新進醫師 支援醫師 專科身分',text:'新增醫師及支援、專科身分涉及使用者權限與申報設定，請由診所管理者依現行教案核對；如需協助請找人工客服，小黑貓不能代為變更。',doc:'nhi-doctor-access'},
 {id:'batch-30',group:'settings',title:'醫師電子簽名檔在哪設定',tags:'醫師簽名檔 電子簽名 同意書',text:'請由具管理權限的人員在【樂易智 → 使用者相關 → 使用者列表】查看簽名檔設定。不要把簽名圖片傳給小黑貓；選項或權限有疑問請找人工客服。'},
-{id:'batch-31',group:'emr',title:'新增或修改電子同意書',tags:'電子同意書 客製同意書 修改 表單',text:'客製同意書或已簽署紀錄的修改需要人工客服協助；小黑貓無法查看或變更個案同意書，也不接收含患者資料的檔案。'},
+{"id": "batch-31", "group": "emr", "title": "如何上傳客製化同意書？", "tags": "客製同意書 客製化同意書 電子同意書 新增同意書 修改同意書 上傳同意書", "steps": ["在 Google Chrome 開啟同意書後台，切換到「上傳同意書」。", "選擇尚未填寫的診所同意書 PDF 範本，不要上傳已簽署或含病人資料的文件。", "上傳後在既有服務群組通知客服，完成後回到同一處下載。已簽署紀錄如需修改，請由人工客服確認。"], "img": "batch-31"},
 {id:'batch-33',group:'pc',title:'版本更新要每台電腦都做嗎',tags:'版本更新 每台電腦 更新樂晴',text:'通常只需在一台櫃台電腦啟動系統版本更新，其他裝置更新期間先登出，完成後重新登入。更新方式及停機時間可能隨版本改變，請依目前系統提示或人工客服確認。'},
 {id:'batch-35',group:'pc',title:'治療規劃畫面晃動或跳動',tags:'治療規劃 畫面晃動 畫面跳動 瀏覽器縮放',text:'先檢查瀏覽器縮放比例，調回 100% 後再試。'},
 {id:'batch-36',group:'pc',title:'樂晴打不開或 API 無回應',tags:'樂晴 打不開 API無回應 網站無法開啟',text:'可先測試其他網站是否正常。若其他網站可開啟、樂晴仍無法使用，請找人工客服排查；小黑貓不能遠端檢查 API。'},
@@ -133,4 +134,7 @@ const FAQS=[
 {id:'g000-no-card',group:'reg',title:'新特約 G000 期間，患者忘帶健保卡怎麼辦',tags:'G000 G000期間 新特約 健保網路還沒上線 忘帶健保卡 沒帶健保卡 不用欠卡',steps:['先由診所依既有流程確認患者具健保身分，並核對必要的身分資料。','使用 G000 新特約方式取卡，再照常掛號。','此情境不必登記為「欠卡」；若不確定是否仍在 G000 期間，請由人工客服確認。'],img:'g000-no-card'},
 {id:'sealant-followup',group:'nhi',title:'窩溝封填已申報，下一次要做第一次評估嗎',tags:'窩溝封填 臼齒封填 封填過 已申報封填 重複申報 第一次評估 第二次評估 脫落補施作 8A 8B 8C 8D 8E 8F 8G 8H 8I 8J 8K 8L 8M 8N 8O 8P',steps:['同一顆恆牙第一大臼齒（牙位 16、26、36、46）的窩溝封填，每人同牙位限申報一次；已申報過就不要再申報封填。','封填施作後滿六個月，才核對同牙位的「第一次評估或脫落補施作」；同牙位限申報一次。不是封填後立刻申報評估。','第二次評估須距原封填滿十二個月，且距第一次評估滿六個月；同牙位也限申報一次。','施作前應檢視健保卡並登入健保署指定系統，確認本次補助尚未施作，另核對年齡與適用條件；個案紀錄不明請由人工客服協助核對。'],img:'sealant-followup',sourceUrl:'https://dep.mohw.gov.tw/dooh/fp-6543-86749-124.html',sourceLabel:'衛福部原文：115年9月1日生效，附件2第9–10頁'},
 {id:'new-staff-training',group:'settings',title:'有新人加入，需要重新安排教學嗎',tags:'新人 新人教學 新進人員 新助理 新來助理 教學影片 教學錄影 重新教學 安排教學',steps:['先開啟診所原有的【樂晴教學影片】資料夾，觀看當初的教學錄影。','可以用電腦、手機或平板觀看，自行安排時間。','看完仍有問題，再聯絡人工客服預約重點解惑教學。'],img:'new-staff-training'},
+{"id": "consent-backend", "group": "emr", "title": "同意書後台從哪裡進去？", "tags": "同意書後台 同意書入口 樂晴公告 訊息中心", "steps": ["用 Google Chrome 開啟樂晴公告，進入「訊息中心」。", "打開左上角選單，點「同意書」。"], "img": "consent-backend"},
+{"id": "consent-template", "group": "emr", "title": "在哪裡下載公版同意書？", "tags": "公版同意書 同意書列表 下載同意書", "steps": ["在 Google Chrome 開啟同意書後台，進入「同意書列表」。", "用分類或搜尋找到需要的同意書，先點預覽確認。", "點綠色下載鍵，同意書便會出現在前台。"], "img": "consent-template"},
+{"id": "calendar-invite-missing", "group": "cal", "title": "醫師沒收到 Google 行事曆的共用邀請信怎麼辦？", "tags": "Google行事曆 共用邀請 沒收到邀請 邀請信 垃圾郵件 重寄邀請", "steps": ["確認醫師開的是接收邀請的 Google 帳號，先查收件匣和垃圾郵件。", "找到後移回收件匣，打開邀請信，點「新增此日曆」→「新增」→「確定」。", "仍找不到時，請聯絡人工客服協助確認，不必在小黑貓輸入信箱。"], "img": "calendar-invite-missing", "doc": "google-sync"},
 ];
