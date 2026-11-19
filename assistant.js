@@ -136,7 +136,43 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
  function docChoice(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();const label=hit&&hit.status==='found'?`牙科支付標準：${hit.code}（摘錄第 ${hit.pages[0]} 頁）`:`操作手冊：${d.title}`;return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">'+esc(label)+'</button>'}
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
- function ask(q){q=q.trim();if(!q)return;lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?[]:rankFaq(q);
+ const indicatorRegions=[
+  {name:'臺北',cities:['臺北市','新北市','基隆市','宜蘭縣','金門縣','連江縣']},
+  {name:'北區',cities:['桃園市','新竹市','新竹縣','苗栗縣']},
+  {name:'中區',cities:['臺中市','彰化縣','南投縣'],doc:'nhi-central-notes'},
+  {name:'南區',cities:['雲林縣','嘉義市','嘉義縣','臺南市'],doc:'nhi-south-notes'},
+  {name:'高屏',cities:['高雄市','屏東縣','澎湖縣'],doc:'nhi-kaoping-notes'},
+  {name:'東區',cities:['花蓮縣','臺東縣']}
+ ];
+ const regionalIndicatorQuestion=q=>{
+  const n=norm(q);
+  return /指標|合理量|合理門診點數/.test(n) &&
+    /超標|超過|逾限|爆量|影響|會怎樣|有關係|會不會|扣點|扣款|折付|核減|門檻|上限|標準|規範|多少/.test(n);
+ };
+ function askIndicatorCity(){
+  const buttons=indicatorRegions.flatMap(region=>region.cities).map(city=>
+   '<button type="button" data-indicator-city="'+esc(city)+'">'+esc(city)+'</button>'
+  );
+  buttons.push('<button type="button" data-indicator-city="">不確定</button>');
+  say('各分區的管控指標可能不同。請先選診所所在的縣市：<div class="lc-cities">'+buttons.join('')+'</div>');
+ }
+ function chooseIndicatorCity(city){
+  const region=indicatorRegions.find(item=>item.cities.includes(city));
+  if(!region){say(supportHtml());return}
+  const doc=documents.find(item=>item.id===region.doc);
+  const label=region.name+(region.name.endsWith('區')?'':'區');
+  if(doc){
+   say(esc(city)+'屬於'+label+'。請確認要查的主題：<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'">'+label+'申報管控指標</button>');
+  }else{
+   say(esc(city)+'屬於'+label+'。網站目前沒有這區的指標文件，可從健保署業務組查詢，或請人工客服協助。<a class="lc-official" href="https://www.nhi.gov.tw/ch/np-2334-1.html" target="_blank" rel="noopener noreferrer">健保署各區服務據點 ↗</a>'+supportHtml());
+  }
+ }
+ function showIndicatorDocument(id){
+  const doc=documents.find(item=>item.id===id&&item.region);
+  if(!doc)return;
+  say('請先核對文件的適用期間。是否影響本期申報，需依該指標及院所狀況確認。<a class="lc-official" href="'+esc(doc.url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a>'+supportHtml());
+ }
+ function ask(q){q=q.trim();if(!q)return;lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}if(!policy&&regionalIndicatorQuestion(q)){askIndicatorCity();return}const r=rank(q),fr=policy?[]:rankFaq(q);
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
   say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
@@ -227,7 +263,12 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   ['pointermove','pointerup','pointercancel'].forEach(t=>root.addEventListener(t,stop))});
  root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  armIdle();
- root.addEventListener('click',e=>{const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+ root.addEventListener('click',e=>{
+  const cityButton=e.target.closest('[data-indicator-city]');
+  if(cityButton){chooseIndicatorCity(cityButton.dataset.indicatorCity);return}
+  const indicatorButton=e.target.closest('[data-indicator-doc]');
+  if(indicatorButton){showIndicatorDocument(indicatorButton.dataset.indicatorDoc);return}
+  const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
