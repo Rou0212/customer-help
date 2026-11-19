@@ -29,7 +29,17 @@ const codeOf=d=>STATION[d.parent||d.id]||'';
 const bigrams=s=>{const r=new Set();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r};
 const FQ=(typeof FAQS!=='undefined')?FAQS:[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
 const faqPool=FQ.map(f=>({f,toks:[...new Set(f.tags.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(f.title),bg:bigrams(norm(f.title+(f.text||'')+(f.steps||[]).join('')))}));
-function rankFaq(q){const n=norm(q);if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
+// 語音常把「上傳」辨識為「上船」；只在同意書情境校正，避免誤改其他查詢。
+function faqQuery(q){
+ const n=norm(q);
+ if(!n.includes('同意書'))return n;
+ const corrected=n.replace(/上船/g,'上傳');
+ // 辨識「同意書怎麼上傳」等倒裝問法，同時保留原本的搜尋字詞。
+ return corrected.includes('上傳')&&!corrected.includes('上傳同意書')
+  ? corrected+' 上傳同意書'
+  : corrected;
+}
+function rankFaq(q){const n=faqQuery(q);if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
 // ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
 const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
 function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
