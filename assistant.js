@@ -112,7 +112,6 @@ const urlOf=d=>BASE+'?doc='+encodeURIComponent(d.parent?d.id:codeOf(d))+'&read=1
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const LINE_URL='https://line.me/R/ti/p/%40leyan';
 const humanRequest=q=>/人工客服|轉人工|找真人|找客服|聯絡客服|需要人工|官方line|line@|客服電話/i.test(norm(q));
-const humanFaq=f=>/人工客服|聯絡客服|客服安排工程師/.test((f.text||'')+(f.steps||[]).join(''));
 const supportHtml=()=>'<div class="lc-support"><b>這題請由人工客服協助</b><p>小黑貓只能依網站手冊與常見問題提供操作指引，無法查看個案資料。請聯絡官方 LINE@ <strong>@leyan</strong>。</p><a class="lc-line-link" href="'+LINE_URL+'" target="_blank" rel="noopener noreferrer">開啟官方 LINE@ @leyan</a><a class="lc-line-qr" href="'+LINE_URL+'" target="_blank" rel="noopener noreferrer" aria-label="掃描 QR code 加入官方 LINE@ @leyan"><img src="'+BASE+'images/line-official-qr.png" alt="官方 LINE@ @leyan 加入好友 QR code" loading="lazy"></a><small>可用另一台手機掃描；不方便使用 LINE 時，可撥 04-2251-8815 分機 9。</small></div>';
 const CAT='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-look"><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
@@ -121,7 +120,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.classList.add('lc-root','lc-mode-'+mode);
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟小黑貓助手">'+CAT+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="小黑貓助手"'+(mode==='fab'?' hidden':'')+'>'+
- '<div class="lc-head">'+(mode==='page'?CAT:'')+'<div class="lc-bubble"><strong>喵～有什麼需要幫忙嗎？</strong><span>打字或用說的，查網站手冊與錯誤代碼；個案請轉人工。</span><small class="lc-hint">對我按右鍵（手機長按）可以餵零食、玩逗貓棒喔。</small></div>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
+ '<div class="lc-head">'+(mode==='page'?CAT:'')+'<strong class="lc-title">小黑貓</strong>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或文件代碼…">'+
@@ -132,7 +131,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function open(d){const url=urlOf(d)+(policyPage(d)>1?'&excerptPage='+policyPage(d):'');if(opt.onOpen){opt.onOpen(d,url,policyPage(d));return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
  function card(d){return '<a class="lc-doc" href="'+urlOf(d)+(policyPage(d)>1?'&excerptPage='+policyPage(d):'')+'" target="leyan-manual" data-id="'+d.id+'"><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(d.id==='nhi-dentist-handbook-2026'&&policyPage(d)>1?'<small>對應摘錄第 '+policyPage(d)+' 頁；請核對原文與現行公告。</small>':'')+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
  function policyImage(hit){const src=BASE+'images/nhi-payment/'+hit.code+'.webp';return '<div class="lc-payment"><b>'+esc(hit.code)+' 支付標準原文截圖</b><a href="'+src+'" target="_blank" rel="noopener" aria-label="放大檢視 '+esc(hit.code)+' 原文截圖"><img src="'+src+'" alt="'+esc(hit.code)+' 的支付標準原文表格與註記" decoding="async"></a><small>摘自 2026 年牙科支付標準表第 '+hit.pages[0]+' 頁。左右滑動看完整表格，點圖可放大；實際申報請核對健保署現行公告。</small></div>'}
- function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(f.sourceUrl?'<p class="lc-alt"><a href="'+esc(f.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(f.sourceLabel||'查看官方原文')+' ↗</a></p>':'')+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')+(humanFaq(f)?supportHtml():'')}
+ function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(f.sourceUrl?'<p class="lc-alt"><a href="'+esc(f.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(f.sourceLabel||'查看官方原文')+' ↗</a></p>':'')+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')}
  function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
  function docChoice(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();const label=hit&&hit.status==='found'?`牙科支付標準：${hit.code}（摘錄第 ${hit.pages[0]} 頁）`:`操作手冊：${d.title}`;return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">'+esc(label)+'</button>'}
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
@@ -157,12 +156,13 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  try {const saved=localStorage.getItem(cityKey);if(cityOptions.includes(saved))clinicCity=saved}catch{}
  const cityBar=document.createElement('div');
  cityBar.className='lc-city-bar';
- $('.lc-head').after(cityBar);
+ $('.lc-title').after(cityBar);
  const citySelect=document.createElement('select');
  citySelect.setAttribute('aria-label','診所所在縣市');
  citySelect.add(new Option('請選診所縣市',''));
  for(const city of cityOptions)citySelect.add(new Option(city,city));
- cityBar.append('診所縣市：',citySelect);
+ cityBar.append(citySelect);
+ citySelect.title='選擇會記在此瀏覽器。統計只計縣市與問題分類。';
  function updateCity(){
   citySelect.value=clinicCity;
   for(const field of root.querySelectorAll('.lc-form input,.lc-form button,.lc-quick button'))field.disabled=!clinicCity;
@@ -174,8 +174,6 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   if(clinicCity)input.focus();
  };
  updateCity();
- cityBar.append(document.createElement('small'));
- cityBar.lastChild.textContent='選擇會記在此瀏覽器。統計只計縣市與問題分類。';
  function countQuestion(city,category){
   fetch('https://leyan-help-stats.leyan-help.workers.dev/question',{
    method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},
@@ -201,9 +199,10 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function showIndicatorDocument(id){
   const doc=documents.find(item=>item.id===id&&item.region);
   if(!doc)return;
-  say('請先核對文件的適用期間。是否影響本期申報，需依該指標及院所狀況確認。<a class="lc-official" href="'+esc(doc.url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a>'+supportHtml());
+  say('請先核對文件的適用期間。是否影響本期申報，需依該指標及院所狀況確認。<a class="lc-official" href="'+esc(doc.url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a>');
  }
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}if(!policy&&regionalIndicatorQuestion(q)){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity);return}const r=rank(q),fr=policy?[]:rankFaq(q);
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}if(!policy&&regionalIndicatorQuestion(q)){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity);return}const r=rank(q),fr=policy?[]:rankFaq(q);
+  if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml());return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
   say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
