@@ -98,3 +98,8 @@ body.modal-open .lc-fab-wrap{display:none}
 
 .lc-cities{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:8px}
 .lc-cities button{min-width:0;padding:6px 2px;border:1px solid #cbd5e1;border-radius:7px;background:white;color:#24354b;cursor:pointer}
+
+.lc-city-bar{padding:6px 12px;color:#354052;font-size:13px;border-bottom:1px solid #e2e8f0}
+.lc-city-bar select{max-width:100%;color:inherit;font:inherit}
+.lc-city-bar small{display:block;margin-top:2px}
+.lc-root button:disabled{opacity:.48;cursor:not-allowed}

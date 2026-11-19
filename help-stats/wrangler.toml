@@ -1,0 +1,12 @@
+name = "leyan-help-stats"
+main = "worker.js"
+compatibility_date = "2026-11-19"
+preview_urls = false
+
+[observability]
+enabled = false
+
+[[d1_databases]]
+binding = "STATS"
+database_name = "leyan-help-stats"
+database_id = "6b009104-968a-44eb-8e11-99bfc2f1f9e6"

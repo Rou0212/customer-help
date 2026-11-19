@@ -149,12 +149,41 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   return /指標|合理量|合理門診點數/.test(n) &&
     /超標|超過|逾限|爆量|影響|會怎樣|有關係|會不會|扣點|扣款|折付|核減|門檻|上限|標準|規範|多少/.test(n);
  };
- function askIndicatorCity(){
-  const buttons=indicatorRegions.flatMap(region=>region.cities).map(city=>
-   '<button type="button" data-indicator-city="'+esc(city)+'">'+esc(city)+'</button>'
-  );
-  buttons.push('<button type="button" data-indicator-city="">不確定</button>');
-  say('各分區的管控指標可能不同。請先選診所所在的縣市：<div class="lc-cities">'+buttons.join('')+'</div>');
+ const cityKey='leyan-clinic-city';
+ const cityOptions=indicatorRegions.flatMap(region=>region.cities);
+ let clinicCity='';
+ try {const saved=localStorage.getItem(cityKey);if(cityOptions.includes(saved))clinicCity=saved}catch{}
+ const cityBar=document.createElement('div');
+ cityBar.className='lc-city-bar';
+ $('.lc-head').after(cityBar);
+ const citySelect=document.createElement('select');
+ citySelect.setAttribute('aria-label','診所所在縣市');
+ citySelect.add(new Option('請選診所縣市',''));
+ for(const city of cityOptions)citySelect.add(new Option(city,city));
+ cityBar.append('診所縣市：',citySelect);
+ function updateCity(){
+  citySelect.value=clinicCity;
+  for(const field of root.querySelectorAll('.lc-form input,.lc-form button,.lc-quick button'))field.disabled=!clinicCity;
+ }
+ citySelect.onchange=()=>{
+  clinicCity=citySelect.value;
+  try {if(clinicCity)localStorage.setItem(cityKey,clinicCity);else localStorage.removeItem(cityKey)}catch{}
+  updateCity();
+  if(clinicCity)input.focus();
+ };
+ updateCity();
+ cityBar.append(document.createElement('small'));
+ cityBar.lastChild.textContent='選擇會記在此瀏覽器。統計只計縣市與問題分類。';
+ function countQuestion(city,category){
+  fetch('https://leyan-help-stats.leyan-help.workers.dev/question',{
+   method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},
+   body:JSON.stringify({city,category}),keepalive:true,credentials:'omit'
+  }).catch(()=>{});
+ }
+ function questionCategory(faq,doc){
+  const problem=typeof PROBLEM_TYPES!=='undefined'&&PROBLEM_TYPES.find(type=>
+   faq?type.groups.includes(faq.group):doc&&type.cats.includes(doc.category));
+  return problem?problem.name.replace(/\s/g,''):'未分類';
  }
  function chooseIndicatorCity(city){
   const region=indicatorRegions.find(item=>item.cities.includes(city));
@@ -172,7 +201,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   if(!doc)return;
   say('請先核對文件的適用期間。是否影響本期申報，需依該指標及院所狀況確認。<a class="lc-official" href="'+esc(doc.url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a>'+supportHtml());
  }
- function ask(q){q=q.trim();if(!q)return;lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}if(!policy&&regionalIndicatorQuestion(q)){askIndicatorCity();return}const r=rank(q),fr=policy?[]:rankFaq(q);
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}if(!policy&&regionalIndicatorQuestion(q)){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity);return}const r=rank(q),fr=policy?[]:rankFaq(q);
+  countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
   say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
@@ -264,17 +294,16 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  armIdle();
  root.addEventListener('click',e=>{
-  const cityButton=e.target.closest('[data-indicator-city]');
-  if(cityButton){chooseIndicatorCity(cityButton.dataset.indicatorCity);return}
   const indicatorButton=e.target.closest('[data-indicator-doc]');
   if(indicatorButton){showIndicatorDocument(indicatorButton.dataset.indicatorDoc);return}
   const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
- async function look(file){if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
+ async function look(file){const city=clinicCity;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
-  let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
-  if(how==='unclear'){wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我再列出可能的主題讓你確認。';log.scrollTop=log.scrollHeight;return}
+  let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){countQuestion(city,'未分類');wait.innerHTML='喵…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
+  if(how==='unclear'){countQuestion(city,'未分類');wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我再列出可能的主題讓你確認。';log.scrollTop=log.scrollHeight;return}
   const a=analyzeScreen(text);
+  countQuestion(city,questionCategory(a.faqs[0]?.f,a.doc));
   if(!a.faqs.length&&!a.doc){wait.innerHTML='我看不出是哪個問題。可以直接輸入畫面上的錯誤代碼。'+supportHtml();return}
   const docs=a.doc?[{d:a.doc}]:[];
   wait.innerHTML=(how==='full'?'這張圖辨識得不太清楚，請特別核對下面的主題。':'我找到可能的主題，請先確認：')+choices(a.faqs,docs)+'<small class="lc-choice-hint">都不是？請直接輸入畫面上的錯誤代碼。</small>';log.scrollTop=log.scrollHeight}
@@ -282,7 +311,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('paste',e=>{const it=[...(e.clipboardData||{}).items||[]].find(x=>x.type&&x.type.startsWith('image/'));if(it){e.preventDefault();look(it.getAsFile())}});
  panel.addEventListener('dragover',e=>{e.preventDefault();panel.classList.add('lc-drop')});panel.addEventListener('dragleave',()=>panel.classList.remove('lc-drop'));
  panel.addEventListener('drop',e=>{e.preventDefault();panel.classList.remove('lc-drop');const f=[...e.dataTransfer.files].find(x=>x.type.startsWith('image/'));if(f)look(f)});
- if(mode==='fab'){const fab=$('.lc-fab');const toggle=on=>{panel.hidden=!on;fab.setAttribute('aria-expanded',on);root.classList.toggle('lc-open',on);if(on)input.focus();else fab.focus()};fab.onclick=()=>toggle(panel.hidden);$('.lc-close').onclick=()=>toggle(false);root.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});root.close=()=>{if(!panel.hidden)toggle(false)}}
+ if(mode==='fab'){const fab=$('.lc-fab');const toggle=on=>{panel.hidden=!on;fab.setAttribute('aria-expanded',on);root.classList.toggle('lc-open',on);if(on)(clinicCity?input:citySelect).focus();else fab.focus()};fab.onclick=()=>toggle(panel.hidden);$('.lc-close').onclick=()=>toggle(false);root.addEventListener('keydown',e=>{if(e.key==='Escape'&&!panel.hidden)toggle(false)});root.close=()=>{if(!panel.hidden)toggle(false)}}
  if(SR){const mic=$('.lc-mic');let rec=null;mic.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='zh-TW';rec.interimResults=true;rec.maxAlternatives=1;let final='';mic.classList.add('on');mic.setAttribute('aria-label','停止語音');input.placeholder='請說話…';
   rec.onresult=ev=>{let t='';for(const r of ev.results){t+=r[0].transcript;if(r.isFinal)final=t}input.value=t};
   rec.onerror=ev=>{if(ev.error==='not-allowed')say('需要允許麥克風權限才能用語音喔。也可以直接打字。')};
