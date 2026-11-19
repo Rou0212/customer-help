@@ -146,6 +146,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  ];
  const regionalIndicatorQuestion=q=>{
   const n=norm(q);
+  if(/處置|支付標準|給付|醫令/.test(n) && !/指標|合理量|合理門診點數/.test(n))return false;
+  if(/(?:申報|抽審|送審|輔導積分)(?:的|相關)?(?:規範|規則|規定|須知|注意事項|原則|標準)|分區(?:申報|抽審)|輔導積分/.test(n))return true;
   return /指標|合理量|合理門診點數/.test(n) &&
     /超標|超過|逾限|爆量|影響|會怎樣|有關係|會不會|扣點|扣款|折付|核減|門檻|上限|標準|規範|多少/.test(n);
  };
