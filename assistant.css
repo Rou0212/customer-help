@@ -1,6 +1,7 @@
 .lc-root{--lc-ink:#17213B;--lc-muted:#526077;--lc-line:#DCE2ED;--lc-panel:#F1F5FB;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--lc-ink)}
 .lc-root *{box-sizing:border-box}.lc-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .lc-cat{display:block;width:100%;height:auto}
+.faq-body>p.faq-text,.lc-faq p{white-space:pre-line}
 @media(prefers-reduced-motion:no-preference){.lc-eyes{transform-origin:58px 52px;animation:lc-blink 4.5s infinite}.lc-tail{transform-origin:84px 96px;animation:lc-tail 2.4s ease-in-out infinite}}
 @keyframes lc-blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}@keyframes lc-tail{0%,100%{transform:rotate(0)}50%{transform:rotate(12deg)}}
 .lc-panel{display:flex;flex-direction:column;background:#fff;border:2.5px solid var(--lc-ink);border-radius:18px;overflow:hidden}
