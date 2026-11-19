@@ -1,9 +1,11 @@
+import {dashboard} from "./dashboard.js";
 const origin = 'https://rou0212.github.io';
 const cities = new Set('臺北市 新北市 基隆市 宜蘭縣 金門縣 連江縣 桃園市 新竹市 新竹縣 苗栗縣 臺中市 彰化縣 南投縣 雲林縣 嘉義市 嘉義縣 臺南市 高雄市 屏東縣 澎湖縣 花蓮縣 臺東縣'.split(' '));
 const categories = new Set('硬體問題 健保申報 掛號・帳務 網路・VPN・上傳 電子病歷・表單 系統設定 Google日曆 牙科支付標準 分區管控指標 人工客服 未分類'.split(' '));
 
 export default {
   async fetch(request, env) {
+    if (new URL(request.url).pathname === "/dashboard" && request.method === "GET") return dashboard(request, env, cities);
     if (new URL(request.url).pathname !== '/question') return new Response(null, { status: 404 });
     if (request.method !== 'POST' || request.headers.get('Origin') !== origin) {
       return new Response(null, { status: 403 });
