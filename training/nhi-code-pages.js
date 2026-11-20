@@ -17,3 +17,10 @@ function matchNhiProcedureCode(query){
  }
  return {status:'unknown',input:tokens[0]};
 }
+
+// 代碼查詢只收標題／標籤明列該醫令的答案，不因一般申報本文提及而命中。
+function matchesNhiProcedureFaq(hit,faq){
+ if(!hit||hit.status!=='found')return false;
+ const tokens=(String(faq.title||'')+' '+String(faq.tags||'')).toUpperCase().match(/(?:P\d{4,5}[A-Z]?|\d{5}[A-Z]?)/g)||[];
+ return tokens.some(token=>{const match=matchNhiProcedureCode(token);return match&&match.status==='found'&&match.code===hit.code});
+}
