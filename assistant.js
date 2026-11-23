@@ -2,9 +2,47 @@
 // 用法：LeyanCat.mount(元素, {mode:'page'|'fab', onOpen:function(doc,url){...}})
 (function(){
 const BASE=new URL('./',location.href).href;
-const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
+const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署').replace(/^不是(?:報價|查帳|讀卡機|藥品)(?:而是|是|我要|要)?/,'');
 // 一般看帳查帳先確認院所；特定押金、帳號等主題不走日結分流。
 function isAccountLookup(q){const n=norm(q);if(/押金|欠卡|退費|預付|儲值|點數|補報|申報|抽審|收據|帳號|密碼|帳密/.test(n))return false;return /(?:當天|當日|今天|今日|每天|每日).{0,8}帳|對帳|日結|下診.{0,8}帳|日報表.{0,3}實收|(?:看|查)(?:到|詢)?(?:一下)?(?:現金)?帳|帳.{0,8}(?:看|查)|帳(?:務|本)?(?:在哪|在那|哪邊|哪裡|那邊|那裡)|^現金帳$/.test(n);}
+// 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
+function routeQuestion(q){const n=norm(q);
+ // 匯出位置必須先確認系統與動作對象，不以泛圖片字詞連到影像上傳或牙周表。
+ const imageObject=/圖片|照片|圖檔|影像/.test(n), exportAction=/匯出|導出|下載/.test(n), locationAsk=/存|儲|位置|哪|去/.test(n);
+ if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
+ if(!/樂易秀|牙周|上傳|健保|申報/.test(n)&&imageObject&&(exportAction||locationAsk))return {type:'clarify',message:'請問是哪一個系統的圖片（例如樂易秀），以及是匯出、下載還是上傳？確認系統與操作後才能提供對應位置。'};
+
+ if(/^(?:都不是|不是這個|都不對)$/.test(n))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
+ if(/其他訊息|不是簡訊/.test(n)||(!/簡訊/.test(n)&&/不能發訊息|訊息.*(?:不能發|發不出)/.test(n)))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
+ if(/帳密忘記|帳號.*(?:哪|忘)|查詢帳號密碼|帳號密碼忘/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};
+ if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
+ if(/報價|合約|簽約|續約/.test(n)||(!/醫療費用|申報費用|日結費用|收據|掛號費|診察費|部分負擔/.test(n)&&/系統.{0,12}(?:價格|價錢|多少錢|收費|費用)|(?:價格|價錢|多少錢|收費|費用).{0,12}系統|^(?:請問)?(?:價格|價錢|多少錢|收費|費用)(?:是多少|多少|怎麼算|嗎)?$/.test(n)))return {type:'human'};
+ if(/(?:現在|目前|大家).*(?:雲端|健保系統).*(?:異常|問題|不能|無法)|(?:雲端|健保系統).*(?:目前|現在).*(?:異常|問題)/.test(n))return {type:'human',message:'目前沒有可核對的即時服務狀態，請由官方人工客服確認；不能以過往異常紀錄判定現在的狀態。'};
+ const missing=/這個|這裡|這邊|這兩個/.test(n)&&/跳出|出現|問題|代碼|重設|讀卡機|ic上傳|檢核/.test(n)&&!/(?:[a-z]?\d{4}|不屬於同一人)/i.test(n);
+ if(missing||/怎麼不能寫卡|不能寫卡怎麼|上傳檢核.*錯誤|等了.*分鐘.*上傳/.test(n))return {type:'clarify',message:'請先補充發生問題的功能／操作步驟，以及畫面上的完整錯誤碼或訊息文字（請勿提供患者個資）。若是上傳，請說明是 IC 就醫資料、X 光影像、申報或電子簽章；目前資訊不足，不能直接判定原因。'};
+ if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
+ if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
+ const routes=[
+ [/列表機|印表機.*連不上/,['printer'],[]],
+ [/讀取.*ic醫令.*沒有.*就醫紀錄/i,['ic-vs-cloud'],[]],
+ [/抽審.*p3601.*自評表/i,['batch-18'],[]],
+ [/初診.*x光.*上傳/i,['image-no-photo'],['nhi-image-upload']],
+ [/多生牙.*牙位/,['batch-25'],['tooth-correction']],
+ [/不屬於同一人/,['batch-08'],[]],
+ [/手動.*標誌雲|標誌雲.*出現/,['cloud-icon'],[]],
+ [/不能發訊息|訊息.*(?:不能發|發不出)/,['batch-49'],[]],
+ [/申覆.*錯誤壓縮檔/,[],['nhi-appeal']],
+ [/(?:半年|六個月|6個月).*沒.*洗牙/,['scaling-followup-list'],[]],
+
+ [/監視器.*(?:調|畫面)|調.*監視器/,['m061'],[]],
+ [/停電.*(?:注意|系統|電腦)/,['power-outage'],[]],
+ [/同意書.*(?:預設|保固).*(?:改|一年)/,['batch-31','consent-backend'],[]],
+ [/讀不到健保卡|健保卡讀不到/,[],['card-reader-errors']],
+ [/(?:新增|增加).*約診.*窩溝|約診窩溝.*新增/,['ley-phrases'],[]]
+ ];
+ for(const [re,faqs,docs] of routes)if(re.test(n))return {type:'topics',faqs,docs};
+ return null;
+}
 // 常見說法 → 手冊（客戶口語、錯字與同義詞補在這裡）
 const INTENTS={
 'nhi-claim':['申報','月申報','總表','線上確認','補正','欠卡','點值'],
@@ -44,7 +82,7 @@ function faqQuery(q){
 // 通用動作／錯誤詞不是主題證據，不能單靠「找不到、異常、調整」把不同領域接起來。
 const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|怎辦|怎看|什麼|意思|代表|哪些|哪裡|在哪|多少|有沒有|怎麼辦|嗎|的|了|找不到|沒反應|看不到|沒有|無法|失敗|異常|錯誤|調整|修改|新增|設定|查詢|顯示|操作|完成|進行|需要|出現|資料/g,'');
 const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
-function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
+function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='topics'?faqPool.filter(p=>route.faqs.includes(p.f.id)).map(p=>({f:p.f,score:100})):[];const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
  if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
@@ -132,7 +170,7 @@ async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T
  // 3) 整張（不確定，會請使用者確認）
  return {t:(await ocrWorker.recognize(c)).data.text||'',how:'full'}}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
-function rank(q){const n=norm(q);if(!n)return [];
+function rank(q){const route=routeQuestion(q);if(route)return route.type==='topics'?pool.filter(d=>route.docs.includes(d.id)).map(d=>({d,score:100})):[];const n=norm(q);if(!n)return [];
  const policy=typeof matchNhiProcedureCode==='function'?matchNhiProcedureCode(q):null;if(policy){const d=pool.find(x=>x.id==='nhi-dentist-handbook-2026');return policy.status==='found'&&d?[{d,score:100}]:[]}
  if(n.includes('新特約'))return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
@@ -314,7 +352,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let accountClinicPending=false;
  function chooseAccountClinic(){accountClinicPending=true;say('請問是牙科院所還是非牙科？<button type="button" class="lc-choice" data-account-clinic="dental">牙科院所</button><button type="button" class="lc-choice" data-account-clinic="other">非牙科院所</button>');}
  function showAccountClinic(kind){accountClinicPending=false;const f=FQ.find(x=>x.id===(kind==='dental'?'dental-daily-cash':'report-daily-receipts'));if(f)say(faqHtml(f));}
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
@@ -463,5 +501,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或文件代碼…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank,rankFaq,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
+window.LeyanCat={mount,rank,rankFaq,routeQuestion,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
 })();
