@@ -105,6 +105,15 @@ html,body{background:#F7F9FC}
 .button:active,.icon-btn:active,.line-btn:active,.faq-more:active,.type-btn:active,.tab:active{transform:scale(.96);box-shadow:none}
 .tab:hover{color:var(--ink)}
 .pic:hover{transform:scale(1.04)}
+.support{transition:box-shadow .35s ease,border-color .35s ease,background-color .35s ease}
+.support:hover{border-color:#06C755;background:#EAFBF1;box-shadow:0 0 0 3px #06C7552E,0 0 26px #06C7555C,0 0 60px #06C75526}
+.support-icon{position:relative}
+.support:hover .support-icon:after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:0 0 0 0 #17764C99;animation:hv-ping 1.4s ease-out infinite}
+.support .line-button{transition:transform .18s ease,box-shadow .3s ease,background-color .18s ease}
+.support:hover .line-button{box-shadow:0 0 14px #06C755AA,0 0 2px #06C755}
+.support-qr img{transition:box-shadow .35s ease,transform .35s ease;border-radius:6px}
+.support:hover .support-qr img{box-shadow:0 0 18px #06C75566;transform:scale(1.03)}
+@keyframes hv-ping{0%{box-shadow:0 0 0 0 #17764C88}100%{box-shadow:0 0 0 14px #17764C00}}
 @keyframes hv-hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-5px) rotate(-8deg)}65%{transform:translateY(0) rotate(6deg)}}
 }</style></head><body>
 <div class="strip" aria-hidden="true"></div>
