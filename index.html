@@ -160,6 +160,13 @@ html,body{background:#F7F9FC}
 .tabs .tab[aria-selected=true]:after{content:"";position:absolute;top:-1px;right:-1px;width:20px;height:20px;background:linear-gradient(225deg,#fff 50%,color-mix(in srgb,var(--tc) 28%,#fff) 50%);border-bottom-left-radius:5px;box-shadow:-2px 2px 3px #1E2A4A1F;pointer-events:none;transform-origin:100% 0;animation:tab-fold .28s ease-out}
 @keyframes tab-fold{from{transform:scale(0)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.tabs .tab[aria-selected=true]:after{animation:none}}
+
+/* 大標題底下會流動的波浪底線，像用筆畫上去的註記 */
+.top h1{position:relative;width:fit-content;padding-bottom:6px}
+.top h1:after{content:"";position:absolute;left:2px;right:2px;bottom:-4px;height:10px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2010%22%3E%3Cpath%20d%3D%22M0%205%20Q6%200%2012%205%20T24%205%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") repeat-x 0 50%/24px 10px;opacity:.85;animation:h1-wave 1.4s linear infinite,h1-draw .9s ease-out both;pointer-events:none}
+@keyframes h1-wave{to{background-position-x:24px}}
+@keyframes h1-draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+@media(prefers-reduced-motion:reduce){.top h1:after{animation:none}}
 </style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
