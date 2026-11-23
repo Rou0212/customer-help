@@ -238,7 +238,7 @@ html,body{background:#F7F9FC}
 <div class="reader-tools"><div class="tool-group"><button type="button" class="tool" id="pdf-prev" disabled aria-label="上一頁">‹ 上一頁</button><form class="page-form" id="page-form"><label for="page-input">第</label><input id="page-input" inputmode="numeric" autocomplete="off" aria-label="頁碼" value="1" disabled><span id="page-total">/ – 頁</span></form><button type="button" class="tool" id="pdf-next" disabled aria-label="下一頁">下一頁 ›</button></div><div class="tool-group"><button type="button" class="tool" id="zoom-out" aria-label="縮小" disabled>－</button><span id="zoom-level" class="zoom-level">符合寬度</span><button type="button" class="tool" id="zoom-in" aria-label="放大" disabled>＋</button></div></div>
 <p id="reader-status" class="reader-status" role="status" aria-live="polite"></p>
 </div></div>
-<script src="manuals.js?v=cs-approved-20261123"></script><script src="functional-index.js?v=topic-audit-20261123"></script><script src="faq.js?v=eii-cleanup-20261123"></script><script src="training/nhi-code-pages.js?v=procedure-search-20261120"></script>
+<script src="manuals.js?v=cs-approved-20261123"></script><script src="functional-index.js?v=topic-audit-20261123"></script><script src="faq.js?v=hca-toys-20261123-final"></script><script src="training/nhi-code-pages.js?v=procedure-search-20261120"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cats=['全部','健保作業','VPN 相關操作','上傳作業','電子病歷','設備排解','Google 日曆'];
@@ -338,7 +338,7 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=toys-20261123b"></script>
+<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=hca-toys-20261123-final"></script>
 <script>
 // 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），用紅筆把它的標題圈起來；收起它時圈圈也消失
 {let last=null;
