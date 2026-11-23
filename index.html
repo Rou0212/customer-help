@@ -211,5 +211,5 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="assistant.js?v=procedure-search-20261120"></script>
+<script src="assistant.js?v=regional-confirm-20261123"></script>
 <script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script></body></html>

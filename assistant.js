@@ -5,7 +5,7 @@ const BASE=new URL('./',location.href).href;
 const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
 // 常見說法 → 手冊（客戶口語、錯字與同義詞補在這裡）
 const INTENTS={
-'nhi-claim':['申報','月申報','總表','線上確認','補正','欠卡','合理量','指標','點值'],
+'nhi-claim':['申報','月申報','總表','線上確認','補正','欠卡','點值'],
 'nhi-review':['抽審','抽樣','送審','審查資料','電子審查'],
 'nhi-appeal':['申覆','補件','專業審查','小綠人','申覆上傳'],
 'nhi-dispute':['爭議','爭審','爭議審議'],
@@ -164,8 +164,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const n=norm(q);
   if(/處置|支付標準|給付|醫令/.test(n) && !/指標|合理量|合理門診點數/.test(n))return false;
   if(/(?:申報|抽審|送審|輔導積分)(?:的|相關)?(?:規範|規則|規定|須知|注意事項|原則|標準)|分區(?:申報|抽審)|輔導積分/.test(n))return true;
-  return /指標|合理量|合理門診點數/.test(n) &&
-    /超標|超過|逾限|爆量|影響|會怎樣|有關係|會不會|扣點|扣款|折付|核減|門檻|上限|標準|規範|多少/.test(n);
+  return /指標|合理量|合理門診點數/.test(n);
  };
  const cityKey='leyan-clinic-city';
  const cityOptions=indicatorRegions.flatMap(region=>region.cities);
@@ -209,7 +208,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const label=region.name+(region.name.endsWith('區')?'':'區');
   if(doc){
    const page=endoIncomplete.test(norm(question))?incompletePages[doc.id]:null;
-   showIndicatorDocument(doc.id,label,page);
+   say(esc(city)+'屬於'+label+'。請確認要查的文件，點選後才顯示內容：<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="'+(page||'')+'">'+esc(doc.title)+'（'+esc(doc.kind)+'）</button>');
   }else{
    say(esc(city)+'屬於'+label+'。網站目前沒有這區的指標文件，可從健保署業務組查詢。<a class="lc-official" href="https://www.nhi.gov.tw/ch/np-2334-1.html" target="_blank" rel="noopener noreferrer">健保署各區服務據點 ↗</a><small>如需協助，可輸入「轉人工」。</small>');
   }
@@ -219,7 +218,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   if(!doc)return;
   const pageLabel=page?'（根管未完成率：第 '+page+' 頁）':'';
   const url=doc.url+(page?'#page='+page:'');
-  say('這邊提供'+label+'的申報規範給您參考。請核對文件適用期間。<a class="lc-official" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+pageLabel+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a><small>看完如果還有問題，可輸入「轉人工」。</small>');
+  say('這邊提供'+label+'的申報規範給您參考（'+esc(doc.kind)+'，非官方原文）。請核對文件適用期間；實際規定以官方公告為準。<a class="lc-official" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+pageLabel+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a><small>看完如果還有問題，可輸入「轉人工」。</small>');
  }
  function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(!policy&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q);
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml());return}
@@ -315,6 +314,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  armIdle();
  root.addEventListener('click',e=>{
+  const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f)say(faqHtml(f));return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){const city=clinicCity;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
