@@ -7,6 +7,11 @@ const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「
 function isAccountLookup(q){const n=norm(q);if(/押金|欠卡|退費|預付|儲值|點數|補報|申報|抽審|收據|帳號|密碼|帳密/.test(n))return false;return /(?:當天|當日|今天|今日|每天|每日).{0,8}帳|對帳|日結|下診.{0,8}帳|日報表.{0,3}實收|(?:看|查)(?:到|詢)?(?:一下)?(?:現金)?帳|帳.{0,8}(?:看|查)|帳(?:務|本)?(?:在哪|在那|哪邊|哪裡|那邊|那裡)|^現金帳$/.test(n);}
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
 function routeQuestion(q){const n=norm(q);
+ // 匯出位置必須先確認系統與動作對象，不以泛圖片字詞連到影像上傳或牙周表。
+ const imageObject=/圖片|照片|圖檔|影像/.test(n), exportAction=/匯出|導出|下載/.test(n), locationAsk=/存|儲|位置|哪|去/.test(n);
+ if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
+ if(!/樂易秀|牙周|上傳|健保|申報/.test(n)&&imageObject&&(exportAction||locationAsk))return {type:'clarify',message:'請問是哪一個系統的圖片（例如樂易秀），以及是匯出、下載還是上傳？確認系統與操作後才能提供對應位置。'};
+
  if(/^(?:都不是|不是這個|都不對)$/.test(n))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
  if(/其他訊息|不是簡訊/.test(n)||(!/簡訊/.test(n)&&/不能發訊息|訊息.*(?:不能發|發不出)/.test(n)))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
  if(/帳密忘記|帳號.*(?:哪|忘)|查詢帳號密碼|帳號密碼忘/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};

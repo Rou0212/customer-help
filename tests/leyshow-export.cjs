@@ -1,0 +1,7 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const c=vm.createContext({URL,location:{href:'https://example.test/'},window:{}});for(const f of ['manuals.js','functional-index.js','faq.js','assistant.js'])vm.runInContext(fs.readFileSync(f,'utf8'),c);const cat=c.window.LeyanCat;
+const positives=['請問樂易秀裡面的匯出圖片按下去之後 圖片的檔案會存取在哪邊?','樂易秀匯出圖片存哪','樂易秀下載照片去哪','樂易秀裡匯出的圖檔在哪裡','樂易秀的照片存到哪個資料夾','樂易秀圖片導出後存放位置','在樂易秀按下載圖片要去哪找'];
+const results=positives.map(q=>{const faq=Array.from(cat.rankFaq(q),x=>x.f.id),docs=Array.from(cat.rank(q),x=>x.d.id);assert.deepEqual(faq,['leyshow-image-export'],q);assert.deepEqual(docs,[],q);return {q,faq,docs}});
+for(const q of ['匯出圖片存哪','下載照片去哪','圖片的檔案會存在哪邊']){assert.equal(cat.routeQuestion(q).type,'clarify');assert.equal(cat.rankFaq(q).length+cat.rank(q).length,0)}
+for(const [q,id,kind] of [['初診x光上傳沒有照片','image-no-photo','faq'],['樂易秀照片要上傳每日醫療影像沒有照片','image-no-photo','faq'],['電子化牙周紀錄表','perio-chart','doc'],['樂易秀設定入口 後台網址','ley-login','faq']]){const hits=kind==='faq'?cat.rankFaq(q).map(x=>x.f.id):cat.rank(q).map(x=>x.d.id);assert(hits.includes(id),q+' '+hits);assert(!hits.includes('leyshow-image-export'),q)}
+const f=cat.rankFaq(positives[0])[0].f;assert.equal(f.text,'樂易秀的圖片匯出後，會存在【共用資料夾 → 樂易秀匯出圖檔】。');
+if(process.argv[2])fs.writeFileSync(process.argv[2],JSON.stringify(results,null,2));console.log('PASS 7 export variants, 3 ambiguous clarifications, 4 upload/perio/approved-entry negatives and exact approved answer');
