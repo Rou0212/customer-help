@@ -2,9 +2,47 @@
 // 用法：LeyanCat.mount(元素, {mode:'page'|'fab', onOpen:function(doc,url){...}})
 (function(){
 const BASE=new URL('./',location.href).href;
-const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
+const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署').replace(/^不是(?:報價|查帳|讀卡機|藥品)(?:而是|是|我要|要)?/,'');
 // 一般看帳查帳先確認院所；特定押金、帳號等主題不走日結分流。
 function isAccountLookup(q){const n=norm(q);if(/押金|欠卡|退費|預付|儲值|點數|補報|申報|抽審|收據|帳號|密碼|帳密/.test(n))return false;return /(?:當天|當日|今天|今日|每天|每日).{0,8}帳|對帳|日結|下診.{0,8}帳|日報表.{0,3}實收|(?:看|查)(?:到|詢)?(?:一下)?(?:現金)?帳|帳.{0,8}(?:看|查)|帳(?:務|本)?(?:在哪|在那|哪邊|哪裡|那邊|那裡)|^現金帳$/.test(n);}
+// 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
+function routeQuestion(q){const n=norm(q);
+ // 匯出位置必須先確認系統與動作對象，不以泛圖片字詞連到影像上傳或牙周表。
+ const imageObject=/圖片|照片|圖檔|影像/.test(n), exportAction=/匯出|導出|下載/.test(n), locationAsk=/存|儲|位置|哪|去/.test(n);
+ if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
+ if(!/樂易秀|牙周|上傳|健保|申報/.test(n)&&imageObject&&(exportAction||locationAsk))return {type:'clarify',message:'請問是哪一個系統的圖片（例如樂易秀），以及是匯出、下載還是上傳？確認系統與操作後才能提供對應位置。'};
+
+ if(/^(?:都不是|不是這個|都不對)$/.test(n))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
+ if(/其他訊息|不是簡訊/.test(n)||(!/簡訊/.test(n)&&/不能發訊息|訊息.*(?:不能發|發不出)/.test(n)))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
+ if(/帳密忘記|帳號.*(?:哪|忘)|查詢帳號密碼|帳號密碼忘/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};
+ if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
+ if(/報價|合約|簽約|續約/.test(n)||(!/醫療費用|申報費用|日結費用|收據|掛號費|診察費|部分負擔/.test(n)&&/系統.{0,12}(?:價格|價錢|多少錢|收費|費用)|(?:價格|價錢|多少錢|收費|費用).{0,12}系統|^(?:請問)?(?:價格|價錢|多少錢|收費|費用)(?:是多少|多少|怎麼算|嗎)?$/.test(n)))return {type:'human'};
+ if(/(?:現在|目前|大家).*(?:雲端|健保系統).*(?:異常|問題|不能|無法)|(?:雲端|健保系統).*(?:目前|現在).*(?:異常|問題)/.test(n))return {type:'human',message:'目前沒有可核對的即時服務狀態，請由官方人工客服確認；不能以過往異常紀錄判定現在的狀態。'};
+ const missing=/這個|這裡|這邊|這兩個/.test(n)&&/跳出|出現|問題|代碼|重設|讀卡機|ic上傳|檢核/.test(n)&&!/(?:[a-z]?\d{4}|不屬於同一人)/i.test(n);
+ if(missing||/怎麼不能寫卡|不能寫卡怎麼|上傳檢核.*錯誤|等了.*分鐘.*上傳/.test(n))return {type:'clarify',message:'請先補充發生問題的功能／操作步驟，以及畫面上的完整錯誤碼或訊息文字（請勿提供患者個資）。若是上傳，請說明是 IC 就醫資料、X 光影像、申報或電子簽章；目前資訊不足，不能直接判定原因。'};
+ if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
+ if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
+ const routes=[
+ [/列表機|印表機.*連不上/,['printer'],[]],
+ [/讀取.*ic醫令.*沒有.*就醫紀錄/i,['ic-vs-cloud'],[]],
+ [/抽審.*p3601.*自評表/i,['batch-18'],[]],
+ [/初診.*x光.*上傳/i,['image-no-photo'],['nhi-image-upload']],
+ [/多生牙.*牙位/,['batch-25'],['tooth-correction']],
+ [/不屬於同一人/,['batch-08'],[]],
+ [/手動.*標誌雲|標誌雲.*出現/,['cloud-icon'],[]],
+ [/不能發訊息|訊息.*(?:不能發|發不出)/,['batch-49'],[]],
+ [/申覆.*錯誤壓縮檔/,[],['nhi-appeal']],
+ [/(?:半年|六個月|6個月).*沒.*洗牙/,['scaling-followup-list'],[]],
+
+ [/監視器.*(?:調|畫面)|調.*監視器/,['m061'],[]],
+ [/停電.*(?:注意|系統|電腦)/,['power-outage'],[]],
+ [/同意書.*(?:預設|保固).*(?:改|一年)/,['batch-31','consent-backend'],[]],
+ [/讀不到健保卡|健保卡讀不到/,[],['card-reader-errors']],
+ [/(?:新增|增加).*約診.*窩溝|約診窩溝.*新增/,['ley-phrases'],[]]
+ ];
+ for(const [re,faqs,docs] of routes)if(re.test(n))return {type:'topics',faqs,docs};
+ return null;
+}
 // 常見說法 → 手冊（客戶口語、錯字與同義詞補在這裡）
 const INTENTS={
 'nhi-claim':['申報','月申報','總表','線上確認','補正','欠卡','點值'],
@@ -44,7 +82,7 @@ function faqQuery(q){
 // 通用動作／錯誤詞不是主題證據，不能單靠「找不到、異常、調整」把不同領域接起來。
 const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|怎辦|怎看|什麼|意思|代表|哪些|哪裡|在哪|多少|有沒有|怎麼辦|嗎|的|了|找不到|沒反應|看不到|沒有|無法|失敗|異常|錯誤|調整|修改|新增|設定|查詢|顯示|操作|完成|進行|需要|出現|資料/g,'');
 const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
-function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
+function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='topics'?faqPool.filter(p=>route.faqs.includes(p.f.id)).map(p=>({f:p.f,score:100})):[];const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
  if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
@@ -132,7 +170,7 @@ async function ocr(file){const T=await loadOcr();if(!ocrWorker)ocrWorker=await T
  // 3) 整張（不確定，會請使用者確認）
  return {t:(await ocrWorker.recognize(c)).data.text||'',how:'full'}}
 const prepared=pool.map(d=>({d,toks:[...new Set(d.keywords.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(d.title),bg:bigrams(norm(d.title+d.description+d.steps.join('')))}));
-function rank(q){const n=norm(q);if(!n)return [];
+function rank(q){const route=routeQuestion(q);if(route)return route.type==='topics'?pool.filter(d=>route.docs.includes(d.id)).map(d=>({d,score:100})):[];const n=norm(q);if(!n)return [];
  const policy=typeof matchNhiProcedureCode==='function'?matchNhiProcedureCode(q):null;if(policy){const d=pool.find(x=>x.id==='nhi-dentist-handbook-2026');return policy.status==='found'&&d?[{d,score:100}]:[]}
  if(n.includes('新特約'))return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
@@ -154,26 +192,33 @@ const supportHtml=name=>'<div class="lc-support"><b>這題請由人工客服協�
 const CAT_SVG='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-look"><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
 // 可選的夥伴：每隻都沿用小黑貓的動畫部位（lc-tail／lc-head-g／lc-eyes／lc-mouth／lc-paw／lc-tongue／lc-treat），所以舔毛、睡覺、吃東西、追逗逗棒都通用
 const PET_SVG=(body)=>'<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true">'+body+'</svg>';
+const TOY_SVG={
+ wand:'<g class="lc-w-pom"><path d="M-4 8-12 20M0 9V24M4 8 12 20" stroke="#F6C945" stroke-width="3" stroke-linecap="round" fill="none"/><circle r="10" fill="#E9524A"/></g>',
+ ball:'<g class="lc-w-pom"><g class="lc-w-spin"><circle r="14" fill="#6FC3F7"/><path d="M-14 0a14 14 0 0 0 28 0z" fill="#F6C945"/><path d="M0-14a14 14 0 0 1 0 28a7 14 0 0 1 0-28z" fill="#F28AA0"/><circle r="14" fill="none" stroke="#2C6FA8" stroke-width="1.6"/></g><ellipse cx="-5" cy="-6" rx="4" ry="2.6" fill="#fff" opacity=".75"/></g>',
+ grass:'<g class="lc-w-pom"><g class="lc-w-spin"><circle r="14" fill="#C9DE8C"/><g fill="none" stroke="#8DAF4A" stroke-width="1.6"><ellipse rx="14" ry="5.5"/><ellipse rx="5.5" ry="14"/><ellipse rx="14" ry="5.5" transform="rotate(60)"/><ellipse rx="14" ry="5.5" transform="rotate(-60)"/></g><path d="M9 -11l5-6M11 -9l7-3M-12 9l-6 4" stroke="#A7C25E" stroke-width="1.6" stroke-linecap="round"/><circle r="14" fill="none" stroke="#7A9A3C" stroke-width="1.4"/></g></g>',
+ fish:'<g class="lc-w-pom"><g class="lc-w-sway"><path d="M17 0l13-10q-3 10 0 20z" fill="#F6A6B8" stroke="#E07A93" stroke-width="1.2" stroke-linejoin="round"/><ellipse rx="20" ry="12" fill="#8FD0F2" stroke="#4FA8E8" stroke-width="1.4"/><path d="M-2-11q6-7 12-1" fill="#F6A6B8" stroke="#E07A93" stroke-width="1.2"/><path d="M2-11v22M8-10v20" stroke="#BFE5F8" stroke-width="1.6" stroke-dasharray="2.4 2.4"/><circle cx="-11" cy="-3" r="2.6" fill="#16203A"/><circle cx="-10.2" cy="-3.8" r=".9" fill="#fff"/><ellipse cx="-12" cy="4" rx="3" ry="1.8" fill="#F6A6B8" opacity=".8"/><path d="M-19 1q2 2.4 4 0" stroke="#16203A" stroke-width="1.2" fill="none" stroke-linecap="round"/></g></g>',
+ wheel:'<g class="lc-w-pom"><path d="M-30 50 0 0 30 50" stroke="#9AA4B2" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M-38 50h20M18 50h20" stroke="#7B8594" stroke-width="5" stroke-linecap="round"/><g class="lc-w-spin"><circle r="48" fill="#EAF6FF" fill-opacity=".55" stroke="#6FC3F7" stroke-width="5"/><g stroke="#9ED8FF" stroke-width="2.4">'+[0,30,60,90,120,150].map(a=>'<path d="M0-48V48" transform="rotate('+a+')"/>').join('')+'</g><circle r="48" fill="none" stroke="#4FA8E8" stroke-width="2" stroke-dasharray="3 6"/><circle r="6" fill="#4FA8E8"/></g></g>'
+};
 const PETS={
- cat:{name:'小黑貓',icon:'🐈‍⬛',svg:CAT_SVG,treat:'🐟 餵零食',toy:'逗貓棒',
+ cat:{name:'小黑貓',icon:'🐈‍⬛',svg:CAT_SVG,treat:'🐟 餵零食',toy:'逗貓棒',play:'wand',toyMenu:'🪶 玩逗貓棒',
   treatSays:['喵～好吃！謝謝你','咕嚕咕嚕…這個零食超讚','吃飽了就有力氣幫你找手冊','喵嗚～再來一口也可以喔','好滿足～我繼續值班囉'],
   toySays:['喵！抓到了～','嘿咻！','再甩一次～','這個我要咬！'],wakeSay:'喵…（伸懶腰）',sound:'喵',hello:'喵～小黑貓回來值班了'},
- poodle:{name:'小貴賓',icon:'🐩',toy:'逗逗棒',treat:'🦴 餵骨頭',
+ poodle:{name:'小貴賓',icon:'🐩',toy:'球',play:'ball',toyMenu:'🎾 玩球',treat:'🦴 餵骨頭',
   svg:PET_SVG('<g class="lc-tail"><circle cx="80" cy="98" r="5" fill="#DB8E5C"/></g><circle cx="58" cy="76" r="15" fill="#DB8E5C"/><circle cx="42" cy="79" r="10" fill="#DB8E5C"/><circle cx="74" cy="79" r="10" fill="#DB8E5C"/><circle cx="58" cy="88" r="18" fill="#DB8E5C"/><circle cx="44" cy="92" r="12" fill="#DB8E5C"/><circle cx="72" cy="92" r="12" fill="#DB8E5C"/><circle cx="45" cy="101" r="11" fill="#DB8E5C"/><circle cx="71" cy="101" r="11" fill="#DB8E5C"/><circle cx="58" cy="103" r="12" fill="#DB8E5C"/><ellipse cx="46" cy="108" rx="8" ry="5" fill="#F6BE8E"/><ellipse cx="70" cy="108" rx="8" ry="5" fill="#F6BE8E"/><path d="M43 106.5v2.6M46 106v2.6M49 106.5v2.6M67 106.5v2.6M70 106v2.6M73 106.5v2.6" stroke="#C98A63" stroke-width="1" stroke-linecap="round"/><g class="lc-head-g"><circle cx="30" cy="50" r="9" fill="#DB8E5C"/><circle cx="25" cy="59" r="10" fill="#DB8E5C"/><circle cx="27" cy="69" r="10" fill="#DB8E5C"/><circle cx="33" cy="77" r="8.5" fill="#DB8E5C"/><circle cx="37" cy="60" r="9" fill="#DB8E5C"/><circle cx="86" cy="50" r="9" fill="#DB8E5C"/><circle cx="91" cy="59" r="10" fill="#DB8E5C"/><circle cx="89" cy="69" r="10" fill="#DB8E5C"/><circle cx="83" cy="77" r="8.5" fill="#DB8E5C"/><circle cx="79" cy="60" r="9" fill="#DB8E5C"/><circle cx="58" cy="56" r="21" fill="#DB8E5C"/><circle cx="58" cy="57" r="17" fill="#C97C4D"/><circle cx="42" cy="40" r="9" fill="#DB8E5C"/><circle cx="48" cy="32" r="10" fill="#DB8E5C"/><circle cx="58" cy="28" r="11" fill="#DB8E5C"/><circle cx="68" cy="32" r="10" fill="#DB8E5C"/><circle cx="74" cy="40" r="9" fill="#DB8E5C"/><circle cx="46" cy="43" r="7" fill="#DB8E5C"/><circle cx="54" cy="41" r="7" fill="#DB8E5C"/><circle cx="62" cy="41" r="7" fill="#DB8E5C"/><circle cx="70" cy="43" r="7" fill="#DB8E5C"/><circle cx="52" cy="64" r="6.5" fill="#F6BE8E"/><circle cx="64" cy="64" r="6.5" fill="#F6BE8E"/><circle cx="58" cy="66.5" r="7.5" fill="#F6BE8E"/><circle cx="58" cy="60.5" r="6.5" fill="#F6BE8E"/><g class="lc-look"><g class="lc-eyes"><circle cx="48" cy="52" r="4.8" fill="#16203A"/><circle cx="68" cy="52" r="4.8" fill="#16203A"/><circle cx="49.7" cy="50.3" r="1.7" fill="#fff"/><circle cx="69.7" cy="50.3" r="1.7" fill="#fff"/></g></g><path d="M54.4 58.5q3.6-1.6 7.2 0q-1 3.2-3.6 4.2q-2.6-1-3.6-4.2z" fill="#16203A"/><path d="M58 63.3v1.6M53.5 64.8q2.2 2.8 4.5 0q2.3 2.8 4.5 0" stroke="#16203A" stroke-width="1.3" fill="none" stroke-linecap="round"/><ellipse class="lc-mouth" cx="58" cy="68" rx="3.4" ry="2.8" fill="#7A2E3A"/></g><ellipse cx="51" cy="77" rx="5.8" ry="5" fill="#F6BE8E"/><ellipse cx="65" cy="77" rx="5.8" ry="5" fill="#F6BE8E"/><path d="M49.5 77.5v2.6M52.5 77.5v2.6M63.5 77.5v2.6M66.5 77.5v2.6" stroke="#C98A63" stroke-width="1" stroke-linecap="round"/><g class="lc-paw"><ellipse cx="70" cy="96" rx="6" ry="8" fill="#F6BE8E"/></g><ellipse class="lc-tongue" cx="59" cy="68" rx="2.6" ry="3.4" fill="#E8708A"/><g class="lc-treat" fill="#F5ECD7" stroke="#C9B48A" stroke-width="1"><path d="M49 6h16v4H49z"/><circle cx="48" cy="5" r="3"/><circle cx="48" cy="11" r="3"/><circle cx="66" cy="5" r="3"/><circle cx="66" cy="11" r="3"/></g>'),
   treatSays:['汪！骨頭好香～','尾巴搖不停…謝謝你！','吃飽了就有力氣幫你找手冊','汪汪～再來一根也可以喔','好滿足～我繼續值班囉'],
-  toySays:['汪！抓到了～','嘿咻！','再丟一次～','這個我要叼走！'],wakeSay:'汪…（伸懶腰）',sound:'汪',hello:'汪！小貴賓來幫你找手冊囉'},
- rabbit:{name:'小白兔',icon:'🐇',toy:'逗逗棒',treat:'🥕 餵紅蘿蔔',
+  toySays:['汪！接到球了～','球球別跑！','再滾一次～','這顆球我要叼走！'],wakeSay:'汪…（伸懶腰）',sound:'汪',hello:'汪！小貴賓來幫你找手冊囉'},
+ rabbit:{name:'小白兔',icon:'🐇',toy:'草球',play:'grass',toyMenu:'🌾 玩草球',treat:'🥕 餵紅蘿蔔',
   svg:PET_SVG('<g class="lc-tail"><circle cx="80" cy="100" r="5" fill="#FFFDF9"/></g><ellipse cx="58" cy="83" rx="32" ry="28" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="58" cy="91" rx="22" ry="17" fill="#FBEFE6"/><ellipse cx="45" cy="108" rx="7.5" ry="4.6" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="71" cy="108" rx="7.5" ry="4.6" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><path d="M42 107v2.5M45 106.5v3M48 107v2.5M68 107v2.5M71 106.5v3M74 107v2.5" stroke="#F0A3AE" stroke-width="1" stroke-linecap="round"/><g class="lc-head-g"><ellipse cx="46" cy="22" rx="8.5" ry="19" transform="rotate(-12 46 22)" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="70" cy="22" rx="8.5" ry="19" transform="rotate(12 70 22)" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="46" cy="24" rx="4.5" ry="14" transform="rotate(-12 46 24)" fill="#F2A9A0"/><ellipse cx="70" cy="24" rx="4.5" ry="14" transform="rotate(12 70 24)" fill="#F2A9A0"/><ellipse cx="58" cy="53" rx="27" ry="24" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><g class="lc-look"><g class="lc-eyes"><circle cx="48" cy="51" r="4.6" fill="#16203A"/><circle cx="68" cy="51" r="4.6" fill="#16203A"/><circle cx="49.6" cy="49.4" r="1.6" fill="#fff"/><circle cx="69.6" cy="49.4" r="1.6" fill="#fff"/></g></g><path d="M55.5 57.5h5l-2.5 2.8z" fill="#F2A9A0"/><path d="M54 61.5q2 2.6 4 0q2 2.6 4 0" stroke="#16203A" stroke-width="1.3" fill="none" stroke-linecap="round"/><ellipse class="lc-mouth" cx="58" cy="65" rx="3.4" ry="2.8" fill="#7A2E3A"/><path d="M37 57 26 55.5M37 60 26 61.5M79 57l11-1.5M79 60l11 1.5" stroke="#16203A" stroke-width="1.1" stroke-linecap="round"/></g><ellipse cx="51" cy="77" rx="5.6" ry="4.6" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="65" cy="77" rx="5.6" ry="4.6" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><path d="M49.5 77.5l1 2M52.5 77.5l.5 2M63.5 77.5l-1 2M66.5 77.5l-.5 2" stroke="#F0A3AE" stroke-width="1" stroke-linecap="round"/><g class="lc-paw"><ellipse cx="70" cy="96" rx="6" ry="8" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/></g><ellipse class="lc-tongue" cx="59" cy="65" rx="2.6" ry="3.4" fill="#E8708A"/><g class="lc-treat"><path d="M50 6q8-3 16 1l-9 12z" fill="#F08A2C"/><path d="M63 6l5-5M64 7l7-2M62 5l2-5" stroke="#4FA34A" stroke-width="2" stroke-linecap="round"/></g>'),
   treatSays:['喀滋喀滋…紅蘿蔔好甜','耳朵開心得豎起來了！','吃飽了就有力氣幫你找手冊','再來一根也可以喔～','好滿足～我繼續值班囉'],
-  toySays:['蹦！抓到了～','跳跳跳！','再甩一次～','這個我要咬咬！'],wakeSay:'嗯…（揉揉眼睛）',sound:'噗',hello:'蹦！小白兔來幫你找手冊囉'},
- bear:{name:'小熊',icon:'🐻',toy:'逗逗棒',treat:'🍯 餵蜂蜜',
+  toySays:['蹦！抓到草球了～','跳跳跳！','草球香香的','再滾一次～'],wakeSay:'嗯…（揉揉眼睛）',sound:'噗',hello:'蹦！小白兔來幫你找手冊囉'},
+ bear:{name:'小熊',icon:'🐻',toy:'魚玩偶',play:'fish',toyMenu:'🐟 玩魚玩偶',treat:'🍯 餵蜂蜜',
   svg:PET_SVG('<g class="lc-tail"><circle cx="80" cy="98" r="4" fill="#A8663F"/></g><ellipse cx="58" cy="86" rx="30" ry="25" fill="#A8663F"/><ellipse cx="58" cy="92" rx="18" ry="15" fill="#FAE9CF"/><ellipse cx="42" cy="106" rx="9" ry="6.5" fill="#B97650"/><ellipse cx="74" cy="106" rx="9" ry="6.5" fill="#B97650"/><path d="M39 105v2.6M42 104.5v2.6M45 105v2.6M71 105v2.6M74 104.5v2.6M77 105v2.6" stroke="#7E4A2C" stroke-width="1" stroke-linecap="round"/><g class="lc-head-g"><circle cx="34" cy="32" r="11" fill="#A8663F"/><circle cx="82" cy="32" r="11" fill="#A8663F"/><circle cx="36" cy="34" r="6" fill="#E8968C"/><circle cx="80" cy="34" r="6" fill="#E8968C"/><ellipse cx="58" cy="52" rx="28" ry="24" fill="#A8663F"/><ellipse cx="58" cy="62" rx="10.5" ry="8.5" fill="#FAE9CF"/><g class="lc-look"><g class="lc-eyes"><circle cx="48" cy="52" r="4.8" fill="#16203A"/><circle cx="68" cy="52" r="4.8" fill="#16203A"/><circle cx="49.7" cy="50.3" r="1.7" fill="#fff"/><circle cx="69.7" cy="50.3" r="1.7" fill="#fff"/></g></g><path d="M54.4 57q3.6-1.6 7.2 0q-1 3.2-3.6 4.2q-2.6-1-3.6-4.2z" fill="#16203A"/><path d="M58 61.8v1.6M53.5 63.3q2.2 2.8 4.5 0q2.3 2.8 4.5 0" stroke="#16203A" stroke-width="1.3" fill="none" stroke-linecap="round"/><ellipse class="lc-mouth" cx="58" cy="67" rx="3.4" ry="2.8" fill="#7A2E3A"/></g><ellipse cx="48" cy="76" rx="6.5" ry="5.5" fill="#B97650"/><ellipse cx="68" cy="76" rx="6.5" ry="5.5" fill="#B97650"/><path d="M46 77v2.6M49 77v2.6M67 77v2.6M70 77v2.6" stroke="#7E4A2C" stroke-width="1" stroke-linecap="round"/><g class="lc-paw"><ellipse cx="70" cy="96" rx="6.5" ry="8.5" fill="#B97650"/></g><ellipse class="lc-tongue" cx="59" cy="67" rx="2.6" ry="3.4" fill="#E8708A"/><g class="lc-treat"><path d="M49 4h16v2c3 1 3 11-1 12H50c-4-1-4-11-1-12z" fill="#E9A13B"/><path d="M48 3h18v3H48z" fill="#B9741C"/></g>'),
   treatSays:['嗯～蜂蜜好甜！謝謝你','舔舔…黏在嘴邊了','吃飽了就有力氣幫你找手冊','再來一罐也可以喔～','好滿足～我繼續值班囉'],
-  toySays:['嘿！抓到了～','嘿咻！','再甩一次～','這個我要抱住！'],wakeSay:'呼啊…（伸懶腰）',sound:'嗚',hello:'嗨～小熊來幫你找手冊囉'},
- hamster:{name:'小倉鼠',icon:'🐹',toy:'逗逗棒',treat:'🌻 餵瓜子',
+  toySays:['嘿！抱住小魚了～','小魚別游走！','嘿咻！','這條魚我要抱著睡'],wakeSay:'呼啊…（伸懶腰）',sound:'嗚',hello:'嗨～小熊來幫你找手冊囉'},
+ hamster:{name:'小倉鼠',icon:'🐹',toy:'滾輪',play:'wheel',toyMenu:'🎡 跑滾輪',treat:'🌻 餵瓜子',
   svg:PET_SVG('<g class="lc-tail"><circle cx="80" cy="100" r="3" fill="#D6943F"/></g><ellipse cx="58" cy="83" rx="32" ry="28" fill="#D6943F"/><ellipse cx="58" cy="91" rx="22" ry="17" fill="#FDF1DC"/><ellipse cx="45" cy="108" rx="7.5" ry="4.6" fill="#F4B2A8"/><ellipse cx="71" cy="108" rx="7.5" ry="4.6" fill="#F4B2A8"/><path d="M42 107v2.5M45 106.5v3M48 107v2.5M68 107v2.5M71 106.5v3M74 107v2.5" stroke="#C97F78" stroke-width="1" stroke-linecap="round"/><g class="lc-head-g"><circle cx="37" cy="33" r="10" fill="#D6943F"/><circle cx="79" cy="33" r="10" fill="#D6943F"/><circle cx="38" cy="34" r="6" fill="#F2A9A0"/><circle cx="78" cy="34" r="6" fill="#F2A9A0"/><ellipse cx="58" cy="53" rx="27" ry="24" fill="#D6943F"/><ellipse cx="40" cy="63" rx="12" ry="9.5" fill="#FDF1DC"/><ellipse cx="76" cy="63" rx="12" ry="9.5" fill="#FDF1DC"/><ellipse cx="58" cy="64" rx="14" ry="8" fill="#FDF1DC"/><g class="lc-look"><g class="lc-eyes"><circle cx="48" cy="51" r="4.6" fill="#16203A"/><circle cx="68" cy="51" r="4.6" fill="#16203A"/><circle cx="49.6" cy="49.4" r="1.6" fill="#fff"/><circle cx="69.6" cy="49.4" r="1.6" fill="#fff"/></g></g><path d="M55.5 57.5h5l-2.5 2.8z" fill="#F2A9A0"/><path d="M54 61.5q2 2.6 4 0q2 2.6 4 0" stroke="#16203A" stroke-width="1.3" fill="none" stroke-linecap="round"/><ellipse class="lc-mouth" cx="58" cy="65" rx="3.4" ry="2.8" fill="#7A2E3A"/><path d="M37 57 26 55.5M37 60 26 61.5M79 57l11-1.5M79 60l11 1.5" stroke="#16203A" stroke-width="1.1" stroke-linecap="round"/></g><ellipse cx="51" cy="77" rx="5.6" ry="4.6" fill="#F4B2A8"/><ellipse cx="65" cy="77" rx="5.6" ry="4.6" fill="#F4B2A8"/><path d="M49.5 77.5l1 2M52.5 77.5l.5 2M63.5 77.5l-1 2M66.5 77.5l-.5 2" stroke="#C97F78" stroke-width="1" stroke-linecap="round"/><g class="lc-paw"><ellipse cx="70" cy="96" rx="6" ry="8" fill="#F4B2A8"/></g><ellipse class="lc-tongue" cx="59" cy="65" rx="2.6" ry="3.4" fill="#E8708A"/><g class="lc-treat"><path d="M57 0c5 3 6 11 0 17-6-6-5-14 0-17z" fill="#2E2A28"/><path d="M55 3v11M59 3v11" stroke="#EDE6D8" stroke-width="1.2" stroke-linecap="round"/></g>'),
   treatSays:['吱！瓜子好香～','先塞進臉頰…等等再吃','吃飽了就有力氣幫你找手冊','吱吱～再來一顆也可以喔','臉頰鼓鼓～我繼續值班囉'],
-  toySays:['吱！抓到了～','滾滾滾！','再甩一次～','這個我要藏起來！'],wakeSay:'吱…（揉揉臉）',sound:'吱',hello:'吱吱！小倉鼠來幫你找手冊囉'}
+  toySays:['吱吱！衝衝衝～','滾輪轉起來了！','跑好快～','吱！再快一點！'],wakeSay:'吱…（揉揉臉）',sound:'吱',hello:'吱吱！小倉鼠來幫你找手冊囉'}
 };
 const PET_ORDER=['cat','poodle','rabbit','bear','hamster'],PET_KEY='leyan-pet';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
@@ -307,7 +352,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let accountClinicPending=false;
  function chooseAccountClinic(){accountClinicPending=true;say('請問是牙科院所還是非牙科？<button type="button" class="lc-choice" data-account-clinic="dental">牙科院所</button><button type="button" class="lc-choice" data-account-clinic="other">非牙科院所</button>');}
  function showAccountClinic(kind){accountClinicPending=false;const f=FQ.find(x=>x.id===(kind==='dental'?'dental-daily-cash':'report-daily-receipts'));if(f)say(faqHtml(f));}
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml(pet.name));return}
@@ -338,32 +383,53 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function feed(){if(acting==='feed'||acting==='wand')return;endAct();acting='feed';const m=motionOK();if(m)root.classList.add('lc-feeding');
   setTimeout(()=>{if(acting==='feed')petSay(pick(pet.treatSays))},m?1300:0);
   actT=setTimeout(()=>{endAct();armIdle()},m?2800:600)}
- // 逗貓棒：全畫面遊戲。另一隻小黑貓在整個畫面追著逗貓棒（手機追手指）跑，湊近就撲
+ // 玩具遊戲（全畫面）：小黑貓追逗貓棒、小貴賓追球、小白兔追草球、小熊撲魚玩偶，都是另一隻分身追著游標（手機追手指）跑，湊近就撲；
+ // 小倉鼠則是滾輪跟著游標走，倉鼠跑進滾輪裡，滾輪移動越快轉得越快。
  function startWand(){
   if(!motionOK()){petSay('你的裝置設定了「減少動態效果」，'+pet.toy+'先休息'+pet.sound+'～',3200);return}
   if(acting==='wand')return;endAct();acting='wand';if(mode==='fab'&&root.close)root.close();
-  const ov=document.createElement('div');ov.className='lc-wand-ov';
-  ov.innerHTML='<svg aria-hidden="true"><line class="lc-w-rod" stroke="#6B4A2B" stroke-width="5" stroke-linecap="round"/><line class="lc-w-str" stroke="#8A9199" stroke-width="1.6"/><g class="lc-w-pom"><path d="M-4 8-12 20M0 9V24M4 8 12 20" stroke="#F6C945" stroke-width="3" stroke-linecap="round" fill="none"/><circle r="10" fill="#E9524A"/></g></svg><button type="button" class="lc-wand-end">收起'+pet.toy+' ✕</button>';
+  const kind=TOY_SVG[pet.play]?pet.play:'wand',hang=kind==='wand'||kind==='fish',rolls=kind==='ball'||kind==='grass';
+  const ov=document.createElement('div');ov.className='lc-wand-ov lc-toy-'+kind;
+  ov.innerHTML='<svg aria-hidden="true">'+(kind==='wand'?'<line class="lc-w-rod" stroke="#6B4A2B" stroke-width="5" stroke-linecap="round"/>':'')+(hang?'<line class="lc-w-str" stroke="#8A9199" stroke-width="1.6"/>':'')+TOY_SVG[kind]+'</svg><button type="button" class="lc-wand-end">收起'+pet.toy+' ✕</button>';
   document.body.appendChild(ov);root.classList.add('lc-playing');
-  const rod=ov.querySelector('.lc-w-rod'),str=ov.querySelector('.lc-w-str'),pomG=ov.querySelector('.lc-w-pom'),endBtn=ov.querySelector('.lc-wand-end');
+  const rod=ov.querySelector('.lc-w-rod'),str=ov.querySelector('.lc-w-str'),pomG=ov.querySelector('.lc-w-pom'),spinG=ov.querySelector('.lc-w-spin'),swayG=ov.querySelector('.lc-w-sway'),endBtn=ov.querySelector('.lc-wand-end');
   const home=root.querySelector('.lc-cat').getBoundingClientRect(),SZ=76;
   const runner=document.createElement('div');runner.className='lc-runner';runner.innerHTML='<div class="lc-runner-in"></div>';runner.firstChild.appendChild(root.querySelector('.lc-cat').cloneNode(true));ov.appendChild(runner);runnerEl=runner;
-  const st={x:innerWidth/2,y:innerHeight*.45},pom={x:st.x,y:st.y+30},cat={x:home.left+home.width/2,y:home.top+home.height/2};let raf=0,face=1,lastPounce=0,lastMove=Date.now(),pouncing=0;
-  function pounce(){const n=Date.now();if(n-lastPounce<900)return;lastPounce=n;pouncing=n;runner.classList.remove('pounce');void runner.offsetWidth;runner.classList.add('pounce');setTimeout(()=>runner.classList.remove('pounce'),520);if(Math.random()<.45)petSay(pick(pet.toySays),1500)}
+  // 球類從指標位置往下一點；吊著的玩具掛在指標下方
+  const drop=hang?(kind==='fish'?44:30):0;
+  const st={x:innerWidth/2,y:innerHeight*.45},pom={x:st.x,y:st.y+drop},cat={x:home.left+home.width/2,y:home.top+home.height/2};
+  let raf=0,face=1,lastPounce=0,lastMove=Date.now(),spin=0,sway=0,boost=0,hop=0,inWheel=false;
+  function pounce(){const n=Date.now();if(n-lastPounce<900)return;lastPounce=n;
+   if(kind==='wheel'){boost=Math.min(boost+14,26);if(inWheel&&Math.random()<.6)petSay(pick(pet.toySays),1500);return}
+   if(rolls)hop=1;runner.classList.remove('pounce');void runner.offsetWidth;runner.classList.add('pounce');setTimeout(()=>runner.classList.remove('pounce'),520);if(Math.random()<.45)petSay(pick(pet.toySays),1500)}
   function frame(){
-   pom.x+=(st.x-pom.x)*.16;pom.y+=(st.y+30-pom.y)*.16;
-   rod.setAttribute('x1',st.x);rod.setAttribute('y1',st.y);rod.setAttribute('x2',st.x+46);rod.setAttribute('y2',st.y-58);
-   str.setAttribute('x1',st.x);str.setAttribute('y1',st.y);str.setAttribute('x2',pom.x);str.setAttribute('y2',pom.y-9);
-   pomG.setAttribute('transform','translate('+pom.x.toFixed(1)+','+pom.y.toFixed(1)+')');
-   // 貓追到小球下方一點的位置
-   const tx=Math.max(SZ/2,Math.min(innerWidth-SZ/2,pom.x)),ty=Math.max(SZ/2,Math.min(innerHeight-SZ/2,pom.y+SZ*.55));
+   const px=pom.x,lag=kind==='wheel'?.1:rolls?.12:.16;
+   pom.x+=(st.x-pom.x)*lag;pom.y+=(st.y+drop-pom.y)*lag;const dx=pom.x-px;
+   if(rod){rod.setAttribute('x1',st.x);rod.setAttribute('y1',st.y);rod.setAttribute('x2',st.x+46);rod.setAttribute('y2',st.y-58)}
+   if(str){str.setAttribute('x1',st.x);str.setAttribute('y1',st.y);str.setAttribute('x2',pom.x);str.setAttribute('y2',pom.y-(kind==='fish'?12:9))}
+   // 球往哪邊滾就往哪邊轉；點一下會彈跳
+   if(rolls){spin+=dx/14*57.3;hop=Math.max(0,hop-.04)}
+   const hopY=rolls?-Math.sin(hop*Math.PI)*26:0;
+   pomG.setAttribute('transform','translate('+pom.x.toFixed(1)+','+(pom.y+hopY).toFixed(1)+')');
+   if(kind==='fish'){sway+=((st.x-pom.x)*.9-sway)*.15;swayG.setAttribute('transform','rotate('+Math.max(-40,Math.min(40,sway)).toFixed(1)+')')}
+   let tx,ty;
+   if(kind==='wheel'){tx=pom.x;ty=pom.y+14}
+   else if(rolls){const side=cat.x<pom.x?-1:1;tx=pom.x+side*SZ*.5;ty=pom.y-SZ*.18}
+   else{tx=pom.x;ty=pom.y+SZ*.55}
+   tx=Math.max(SZ/2,Math.min(innerWidth-SZ/2,tx));ty=Math.max(SZ/2,Math.min(innerHeight-SZ/2,ty));
    const vx=tx-cat.x,vy=ty-cat.y,d=Math.hypot(vx,vy),sp=Math.min(d,Math.max(3,d*.09),11);
-   if(d>2){cat.x+=vx/d*sp;cat.y+=vy/d*sp}
-   if(Math.abs(vx)>6)face=vx>0?1:-1;
-   runner.classList.toggle('run',d>14);
-   runner.style.transform='translate('+(cat.x-SZ/2).toFixed(1)+'px,'+(cat.y-SZ/2).toFixed(1)+'px)';runner.firstChild.style.transform='scaleX('+face+')';
+   if(kind==='wheel'&&inWheel){cat.x=tx;cat.y=ty}else if(d>2){cat.x+=vx/d*sp;cat.y+=vy/d*sp}
+   if(kind==='wheel'){
+    if(!inWheel&&d<6){inWheel=true;petSay(pick(pet.toySays),1500)}
+    // 滾輪：倉鼠在裡面一直跑，滾輪移動越快、點越多下，轉得越快
+    boost*=.97;const rate=inWheel?4+Math.min(14,Math.abs(dx)*1.5)+boost:0;spin+=rate;
+    if(inWheel&&Math.abs(dx)>.4)face=dx>0?1:-1;else if(!inWheel&&Math.abs(vx)>6)face=vx>0?1:-1;
+    runner.classList.toggle('run',inWheel||d>14);runner.style.setProperty('--run-speed',(inWheel?Math.max(.12,.3-rate/120):.28).toFixed(2)+'s');
+   }else{if(Math.abs(vx)>6)face=vx>0?1:-1;runner.classList.toggle('run',d>14)}
+   if(spinG){const r=kind==='wheel'?(face>0?-spin:spin):spin;spinG.setAttribute('transform','rotate('+r.toFixed(1)+')')}
+   runner.style.transform='translate('+(cat.x-SZ/2).toFixed(1)+'px,'+(cat.y-SZ/2).toFixed(1)+'px)';runner.firstChild.style.transform='scaleX('+face+')'+(kind==='wheel'&&inWheel?' scale(.82)':'');
    const c=runner.querySelector('.lc-cat');c.style.setProperty('--ex',Math.max(-3,Math.min(3,(pom.x-cat.x)/60*face)).toFixed(2)+'px');c.style.setProperty('--ey',Math.max(-2,Math.min(2,(pom.y-cat.y)/80)).toFixed(2)+'px');
-   const now=Date.now();if(now-lastMove<600&&Math.hypot(pom.x-cat.x,pom.y-cat.y)<SZ*.9)pounce();
+   const now=Date.now();if(kind!=='wheel'&&now-lastMove<600&&Math.hypot(pom.x-cat.x,pom.y-cat.y)<SZ*.9)pounce();
    if(now-lastMove>90000){end();return}
    placeSay();raf=requestAnimationFrame(frame)}
   function onKey(e){if(e.key==='Escape'){e.preventDefault();e.stopPropagation();end()}}
@@ -383,7 +449,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   else if(e.key==='Tab')closeMenu()}
  function openMenu(x,y,touch,pickPets){closeMenu();if(acting==='wand')return;
   menu=document.createElement('div');menu.className='lc-menu';menu.setAttribute('role','menu');menu.setAttribute('aria-label',pickPets?'換夥伴':pet.name);
-  const items=pickPets?PET_ORDER.map(k=>['pet:'+k,PETS[k].icon+' '+PETS[k].name+(k===petKey?'　✓':'')]):[['feed',pet.treat],['wand','🪶 玩'+pet.toy],['pets','🐾 換夥伴']];if(!pickPets&&mode==='fab')items.push(['chat','💬 開啟對話']);
+  const items=pickPets?PET_ORDER.map(k=>['pet:'+k,PETS[k].icon+' '+PETS[k].name+(k===petKey?'　✓':'')]):[['feed',pet.treat],['wand',pet.toyMenu||'🪶 玩'+pet.toy],['pets','🐾 換夥伴']];if(!pickPets&&mode==='fab')items.push(['chat','💬 開啟對話']);
   menu.innerHTML=items.map(i=>'<button type="button" role="menuitem" data-act="'+i[0]+'">'+esc(i[1])+'</button>').join('');
   document.body.appendChild(menu);const w=menu.offsetWidth,h=menu.offsetHeight;
   menu.style.left=Math.max(8,Math.min(x,innerWidth-w-8))+'px';menu.style.top=Math.max(8,Math.min(touch?y-h-24:y,innerHeight-h-8))+'px';
@@ -435,5 +501,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或文件代碼…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank,rankFaq,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
+window.LeyanCat={mount,rank,rankFaq,routeQuestion,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
 })();
