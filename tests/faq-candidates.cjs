@@ -16,3 +16,11 @@ assert.equal(cat.rankFaq('掛號費要調整')[0].f.id,'batch-38');
 // 相關的錯誤代碼仍會一起列為候選
 assert(cat.rankFaq('錯誤 9043：醫師 PIN 碼鎖住').slice(0,2).some(x=>x.f.id==='9039'));
 console.log('PASS registration time FAQ and weak-candidate filtering');
+// 同事回報：問「權限怎麼改」完全找不到，只出現人工客服。
+for(const q of ['權限怎麼改','修改權限','帳號權限','權限設定','怎麼開權限','我沒有權限','群組權限']){
+ assert.equal(cat.rankFaq(q)[0]?.f.id,'permission-edit',q);
+}
+assert.equal(cat.rankFaq('樂易智看不到設定選項')[0].f.id,'batch-37');
+// 人工客服提示要用目前夥伴的名字，不寫死「小黑貓」
+assert(!/supportHtml\(\)/.test(fs.readFileSync('assistant.js','utf8')),'supportHtml 要帶入夥伴名稱');
+console.log('PASS permission FAQ and companion name in support box');
