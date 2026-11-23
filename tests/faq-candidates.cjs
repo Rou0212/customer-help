@@ -21,3 +21,15 @@ assert.equal(cat.rankFaq('樂易智看不到設定選項')[0].f.id,'batch-37');
 // 人工客服提示要用目前夥伴的名字，不寫死「小黑貓」
 assert(!/supportHtml\(\)/.test(fs.readFileSync('assistant.js','utf8')),'supportHtml 要帶入夥伴名稱');
 console.log('PASS permission FAQ and companion name in support box');
+// 醫事卡（醫師卡）問題一律引導到醫事憑證管理中心；有對應教案（醫事卡解鎖）就一起附上
+const byId=id=>vm.runInContext('FAQS',c).find(f=>f.id===id);
+for(const q of ['醫事卡怎麼開卡','醫師卡開卡','開卡'])assert.equal(cat.rankFaq(q)[0]?.f.id,'hca-open',q);
+for(const q of ['醫事卡','醫事卡密碼忘記','醫事卡過期','醫事卡遺失'])assert.equal(cat.rankFaq(q)[0]?.f.id,'hca-card',q);
+for(const q of ['醫事卡鎖住了','醫師卡鎖卡'])assert.equal(cat.rankFaq(q)[0]?.f.id,'9043',q);
+assert(cat.rankFaq('醫事卡解鎖').slice(0,2).some(x=>x.f.id==='9043'));
+for(const id of ['hca-open','hca-card'])assert.equal(byId(id).sourceUrl,'https://hca.nat.gov.tw/');
+assert.deepEqual([...byId('hca-card').docs],['hca-unlock']);
+// 一般「忘記密碼」仍是系統密碼；讀不到卡仍先處理讀卡機
+assert.equal(cat.rankFaq('忘記密碼')[0].f.id,'user-pw');
+assert.equal(cat.rankFaq('醫師卡讀不到')[0].f.id,'restart-console');
+console.log('PASS HCA card questions link to hca.nat.gov.tw with unlock tutorial');
