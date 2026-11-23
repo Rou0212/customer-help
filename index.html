@@ -204,6 +204,16 @@ html,body{background:#F7F9FC}
 .st-fold .st-a:after{content:"";position:absolute;right:4px;top:10px}
 @media (hover:hover){.route.fold .route-head:hover{background:color-mix(in srgb,var(--c) 7%,#fff)}.station.st-fold:not(.open):hover{border-color:color-mix(in srgb,var(--c) 45%,var(--line));box-shadow:0 6px 16px #203A6314}}
 @media(prefers-reduced-motion:reduce){.route.fold.open .stations{animation:none}.route-head .chev,.st-fold .st-a:after{transition:none}}
+
+/* 展開的框上色：常見問題分類、問題、手冊分類、手冊都一樣；最後展開的那個最明顯 */
+.faq-item[open]{border-color:color-mix(in srgb,var(--c) 45%,var(--line));background:color-mix(in srgb,var(--c) 4%,#fff);box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 18%,transparent)}
+.faq-type.fold.open,.route.fold.open{background:color-mix(in srgb,var(--c) 3%,#fff)}
+.station.st-fold.open{border-color:color-mix(in srgb,var(--c) 45%,var(--line));background:linear-gradient(color-mix(in srgb,var(--c) 6%,#fff),#fff 120px)}
+.last-open{position:relative}
+.faq-item.last-open,.faq-type.fold.last-open,.route.fold.last-open,.station.st-fold.last-open,.station.st-fold.last-open:not(:has(.warn)){border:2px solid var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 20%,transparent),0 10px 26px color-mix(in srgb,var(--c) 22%,transparent)}
+.last-open:after{content:"✨ 剛打開";position:absolute;top:-11px;right:16px;z-index:2;padding:2px 9px;border-radius:999px;background:var(--c);color:#fff;font-size:12px;font-weight:800;line-height:18px;letter-spacing:.04em;box-shadow:0 3px 8px #0002;pointer-events:none;animation:lo-tag .45s cubic-bezier(.2,1.6,.4,1)}
+@keyframes lo-tag{from{transform:scale(0) rotate(-12deg);opacity:0}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.last-open:after{animation:none}}
 </style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
@@ -331,4 +341,28 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
 <script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=toys-20261123b"></script>
-<script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script><script>{const p=new URLSearchParams(location.search);if(p.get('manual')==='leyizhi-backend')openReader('leyizhi-backend',null,Number(p.get('page'))||1)}</script></body></html>
+<script>
+// 展開時：標記「最後展開」的框，並噴出可愛的小星星、愛心（減少動態效果時只上色、不噴特效）
+{let last=null,px=null,py=null;
+ const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
+ addEventListener('pointerdown',e=>{px=e.clientX;py=e.clientY},true);
+ // 用「怎麼找回這個框」記住它，重新整理清單後也能把顏色補回去
+ function keyOf(el){if(el.matches('.faq-item'))return '#'+el.id;if(el.matches('.faq-type'))return '#'+el.querySelector('.faq-type-body').id;if(el.matches('.route'))return '.route-toggle[data-route="'+el.querySelector('.route-toggle').dataset.route+'"]';if(el.matches('.station'))return '.station[data-id="'+el.dataset.id+'"]';return null}
+ function find(k){const n=k&&document.querySelector(k);return n&&(n.closest('.faq-item,.faq-type,.route,.station'))}
+ function burst(el){if(calm())return;const r=el.getBoundingClientRect(),x=px!=null&&px>=r.left&&px<=r.right&&py>=r.top-4&&py<=r.top+80?px:r.right-40,y=px!=null&&x===px?py:r.top+18;px=py=null;
+  const bits=['⭐','💖','✨','🌸','💫','🎀','💗'],n=7;
+  for(let i=0;i<n;i++){const d=document.createElement('span');d.textContent=bits[(i+Math.floor(Math.random()*bits.length))%bits.length];d.setAttribute('aria-hidden','true');
+   d.style.cssText='position:fixed;left:'+x+'px;top:'+y+'px;z-index:9999;pointer-events:none;font-size:'+(13+Math.random()*9)+'px;line-height:1;will-change:transform,opacity';document.body.appendChild(d);
+   const a=-Math.PI*(.08+.84*i/(n-1))+(Math.random()-.5)*.25,dist=46+Math.random()*40,dx=Math.cos(a)*dist,dy=Math.sin(a)*dist,rot=(Math.random()-.5)*80;
+   d.animate([{transform:'translate(-50%,-50%) scale(.2)',opacity:0},{transform:'translate(calc(-50% + '+dx*.75+'px),calc(-50% + '+dy*.75+'px)) scale(1.15) rotate('+rot*.6+'deg)',opacity:1,offset:.45},{transform:'translate(calc(-50% + '+dx+'px),calc(-50% + '+(dy+14)+'px)) scale(.8) rotate('+rot+'deg)',opacity:0}],{duration:760+Math.random()*200,easing:'cubic-bezier(.2,.8,.3,1)',delay:i*25}).onfinish=()=>d.remove()}
+  el.animate([{transform:'translateY(0)'},{transform:'translateY(-3px)'},{transform:'translateY(1px)'},{transform:'none'}],{duration:380,easing:'ease-out'})}
+ function mark(el,fx){document.querySelectorAll('.last-open').forEach(x=>x!==el&&x.classList.remove('last-open'));if(!el)return;el.classList.add('last-open');last=keyOf(el);if(fx)burst(el)}
+ // 收合時：如果收起的正好是最後展開的那個，就拿掉標記
+ function unmark(el){if(el&&el.classList.contains('last-open')){el.classList.remove('last-open');last=null}}
+ function check(t){const tg=t.closest&&t.closest('.faq-toggle,.route-toggle,.st-fold .st-a');if(!tg)return;const box=tg.closest('.faq-type,.route,.station');if(!box)return;box.classList.contains('open')?mark(box,true):unmark(box)}
+ document.addEventListener('click',e=>check(e.target));
+ document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')setTimeout(()=>check(e.target))});
+ document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('.faq-item'))return;d.open?mark(d,true):unmark(d)},true);
+ // 清單重新產生（換縣市、搜尋…）後，把「最後展開」的顏色補回去
+ const base=render;render=function(){const r=base.apply(this,arguments);if(last){const el=find(last);if(el&&(el.open||el.classList.contains('open')))el.classList.add('last-open');else last=null}return r}}
+</script><script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script><script>{const p=new URLSearchParams(location.search);if(p.get('manual')==='leyizhi-backend')openReader('leyizhi-backend',null,Number(p.get('page'))||1)}</script></body></html>
