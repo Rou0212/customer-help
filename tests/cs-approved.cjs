@@ -4,7 +4,7 @@ for(const f of ['manuals.js','functional-index.js','faq.js','assistant.js'])vm.r
 const faq=vm.runInContext('FAQS',c),docs=vm.runInContext('documents',c),cat=c.window.LeyanCat;
 assert.equal(faq.length,141);assert.equal(new Set(faq.map(f=>f.id)).size,141);
 for(const [q,id] of [['樂晴的進度1~7各代表什麼意思','progress-1-7'],['掛號畫面卡號顯示02怎麼辦','02card'],['同意書的醫師簽名跑不出來','consent-signature-missing'],['針對個別患者要怎麼撈出醫令清單','batch-26'],['醫療費用要補報要怎麼做','supplement-claim-upload'],['補報的抽審要從哪裡上傳','supplement-review-upload'],['醫療費用收據上要顯示印花稅總繳章要怎麼設定','receipt-stamp-image']])assert.equal(cat.rankFaq(q)[0].f.id,id,q);
-for(const q of ['主訴在哪調整','醫療費用要補報要怎麼做'])assert(!cat.rankFaq(q).some(x=>['batch-38','receipt-stamp-image'].includes(x.f.id)),q);
+for(const q of ['主訴在哪調整','醫療費用要補報要怎麼做'])assert(!cat.rankFaq(q).some(x=>['batch-38','receipt-stamp-image','diag-fee'].includes(x.f.id)),q);
 assert(!cat.rankFaq('樂晴的進度1~7各代表什麼意思').some(x=>x.f.id==='batch-36'));
 assert(!cat.rankFaq('進度6是什麼').some(x=>x.f.id==='user-pw'));
 assert(!cat.rankFaq('補報申報日期').some(x=>x.f.id==='e300'));
