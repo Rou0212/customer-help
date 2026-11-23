@@ -39,7 +39,12 @@ function faqQuery(q){
   ? corrected+' 上傳同意書'
   : corrected;
 }
-function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];return faqPool.map(p=>{let s=0;
+// 通用動作／錯誤詞不是主題證據，不能單靠「找不到、異常、調整」把不同領域接起來。
+const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|怎辦|怎看|什麼|意思|代表|哪些|哪裡|在哪|多少|有沒有|怎麼辦|嗎|的|了|找不到|沒反應|看不到|沒有|無法|失敗|異常|錯誤|調整|修改|新增|設定|查詢|顯示|操作|完成|進行|需要|出現|資料/g,'');
+const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
+function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
+ if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
+ if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
  const required={'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
  if(required[p.f.id]&&!required[p.f.id].test(n))return {f:p.f,score:0};
  if(p.f.id==='progress-1-7'&&/申報|補報|抽審|上傳|簽章/.test(n)&&!/樂晴|掛號|寫卡/.test(n))return {f:p.f,score:0};
@@ -56,7 +61,7 @@ if(p.f.kind&&typeof functionMatches!=='undefined'&&!functionMatches(n,p.f))retur
  if(/押金.*收據/.test(n)&&/押金收據/.test(p.title))s+=50;
  if(/抽審/.test(n)&&/牙位/.test(n)&&/抽審/.test(p.title)&&/牙位/.test(p.title))s+=80;
  if(/手機/.test(n)&&!/手機/.test(p.title))s-=20;
- return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
+ return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score).filter((r,i,all)=>r.score>=all[0].score*0.6)}
 // ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
 const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
 function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
@@ -129,6 +134,7 @@ function rank(q){const n=norm(q);if(!n)return [];
  if(n.includes('新特約'))return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
  return prepared.map(p=>{let s=0;
+  if(/同意書/.test(n)&&!/同意書/.test(p.d.title+' '+p.d.keywords))return {d:p.d,score:0};
   (INTENTS[p.d.id]||[]).forEach(ph=>{const k=norm(ph);if(n.includes(k))s+=(p.d.parent?20:10)+k.length});
   p.toks.forEach(t=>{if(n.includes(t))s+=Math.min(t.length,6)*1.5});
   if(n.includes(p.title))s+=15;

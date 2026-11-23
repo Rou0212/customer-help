@@ -34,7 +34,7 @@ const FUNCTION_INDEX=[
     "id": "ley-drug",
     "group": "settings",
     "title": "新增藥品與藥水設定",
-    "tags": "新增藥品 藥品新增 藥水 代碼 找不到藥",
+    "tags": "新增藥品 藥品新增 藥品 藥水 藥品代碼 找不到藥",
     "page": 5,
     "steps": [
       "限具後台編輯權限的管理者或護理長操作；沒有權限請洽管理者／教學人員。",
@@ -129,7 +129,7 @@ const FUNCTION_INDEX=[
     "id": "ley-procedure-add",
     "group": "settings",
     "title": "系統找不到處置代碼：新增牙科處置",
-    "tags": "新增處置 處置新增 找不到處置 找不到代碼 處置代碼找不到",
+    "tags": "新增處置 處置新增 找不到處置 找不到健保代碼 處置代碼找不到",
     "page": 13,
     "steps": [
       "限具後台編輯權限的管理者或護理長操作；沒有權限請洽管理者／教學人員。",
@@ -358,6 +358,31 @@ const FUNCTION_INDEX=[
     ]
   }
 ];
-const functionMatches=(q,f)=>{const n=String(q).toLowerCase().replace(/[\s，。？！、,.?!]/g,'');return f.tags.split(/\s+/).some(t=>n.replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎|的/g,'').includes(t.toLowerCase()))};
+// 主題先符合，才比對操作詞；「代碼、登入、排序」不可跨領域認定答案。
+const FUNCTION_SUBJECTS={
+ 'ley-login':/樂易智|後台/,
+ 'ley-phrases':/片語|主訴|囑言|預約事項/,
+ 'ley-drug':/藥品|藥水|找不到藥|藥物代碼|藥代碼/,
+ 'ley-drug-disable':/藥品|藥膏|不用的藥/,
+ 'ley-drug-package':/藥品|藥物組合|套餐加藥/,
+ 'ley-procedure-package':/處置套餐|處置組合|套餐帶入病歷/,
+ 'ley-procedure-edit':/處置|主訴預設/,
+ 'ley-procedure-copy':/處置|巨集/,
+ 'ley-procedure-add':/處置|健保代碼|申報代碼/,
+ 'ley-procedure-disable':/處置/,
+ 'ley-icd':/icd10|傷病碼/i,
+ 'ley-icd-map':/傷病|icd9|icd10|對照表/i,
+ 'ley-discount':/優待|掛號費優待/,
+ 'ley-plan':/自費|治療規劃項目|新增療程/,
+ 'ley-disease':/系統疾病|過敏|疾病項目/,
+ 'ley-doctor':/醫師|專科身分/,
+ 'ley-order':/排序|順序|拖曳/
+};
+const functionMatches=(q,f)=>{
+ const n=String(q).toLowerCase().replace(/[\s，。？！、,.?!]/g,'');
+ if(FUNCTION_SUBJECTS[f.id]&&!FUNCTION_SUBJECTS[f.id].test(n))return false;
+ if(f.permission&&!/不見|不能|看不到|權限|只能|沒有|開啟|開關|按鈕|選單|設定/.test(n))return false;
+ return f.tags.split(/\s+/).some(t=>n.replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎|的/g,'').includes(t.toLowerCase()));
+};
 
 const FUNCTION_SOURCE_PAGES=[{"page": 1, "title": "封面"}, {"page": 2, "title": "後台登入與編輯資格"}, {"page": 3, "title": "開放項目總覽"}, {"page": 4, "title": "片語設定"}, {"page": 5, "title": "新增藥品與藥水"}, {"page": 6, "title": "藥膏與藥品停用"}, {"page": 7, "title": "藥品套餐"}, {"page": 8, "title": "處置套餐建立"}, {"page": 9, "title": "處置套餐帶入病歷"}, {"page": 10, "title": "處置可編輯欄位"}, {"page": 11, "title": "編輯處置"}, {"page": 12, "title": "複製處置"}, {"page": 13, "title": "新增處置"}, {"page": 14, "title": "處置停用"}, {"page": 15, "title": "常用ICD10"}, {"page": 16, "title": "傷病對照建立"}, {"page": 17, "title": "多組傷病對照"}, {"page": 18, "title": "優待項目"}, {"page": 19, "title": "治療規劃項目"}, {"page": 20, "title": "系統疾病與過敏藥物"}, {"page": 21, "title": "專任醫師設定（人工確認）"}, {"page": 22, "title": "支援醫師設定（人工確認）"}, {"page": 23, "title": "拖曳排序"}, {"page": 24, "title": "排序結果"}, {"page": 25, "title": "聯絡資訊"}];
