@@ -42,6 +42,7 @@ function faqQuery(q){
 function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];return faqPool.map(p=>{let s=0;
  const required={'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
  if(required[p.f.id]&&!required[p.f.id].test(n))return {f:p.f,score:0};
+ if(p.f.id==='progress-1-7'&&/申報|補報|抽審|上傳|簽章/.test(n)&&!/樂晴|掛號|寫卡/.test(n))return {f:p.f,score:0};
  if(p.f.id==='supplement-review-upload'&&!/抽審|送審/.test(n))return {f:p.f,score:0};
  if(p.f.id==='e300'&&/補報/.test(n)&&!/e300/i.test(n))return {f:p.f,score:0};
 if(p.f.kind&&typeof functionMatches!=='undefined'&&!functionMatches(n,p.f))return {f:p.f,score:0};p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;

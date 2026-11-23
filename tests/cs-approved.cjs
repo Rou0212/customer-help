@@ -14,3 +14,7 @@ for(const id of ['manual-order-list','supplement-claim','cache-desktop','cache-m
 assert(faq.find(f=>f.id==='progress-1-7').text.includes('6：異動病歷後重新寫卡完成'));
 assert(faq.find(f=>f.id==='supplement-claim-upload').text.includes('暫不提供填法'));
 console.log('PASS approved batch: seven question routes, unrelated exclusions, aliases, attachments, 141 IDs and pending-date boundary');
+
+for(const q of ['進度意思','進度','進度怎麼看','進度是什麼','進度說明'])assert.equal(cat.rankFaq(q)[0].f.id,'progress-1-7',q);
+for(const q of ['補報進度','上傳進度','簽章進度','申報進度查詢'])assert(!cat.rankFaq(q).some(x=>x.f.id==='progress-1-7'),q);
+console.log('PASS short progress questions and distinct workflow-progress exclusions');
