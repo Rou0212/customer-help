@@ -165,7 +165,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const n=norm(q);
   if(/處置|支付標準|給付|醫令/.test(n) && !/指標|合理量|合理門診點數/.test(n))return false;
   if(/(?:申報|抽審|送審|輔導積分)(?:的|相關)?(?:規範|規則|規定|須知|注意事項|原則|標準)|分區(?:申報|抽審)|輔導積分/.test(n))return true;
-  return /指標|合理量|合理門診點數/.test(n);
+  return /指標|管控|合理量|合理門診點數/.test(n);
  };
  const cityKey='leyan-clinic-city';
  const cityOptions=indicatorRegions.flatMap(region=>region.cities);
@@ -188,6 +188,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   clinicCity=citySelect.value;
   try {if(clinicCity)localStorage.setItem(cityKey,clinicCity);else localStorage.removeItem(cityKey)}catch{}
   updateCity();
+  window.dispatchEvent(new Event('leyan-city-change'));
   if(clinicCity)input.focus();
  };
  updateCity();
@@ -202,9 +203,23 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
    faq?type.groups.includes(faq.group):doc&&type.cats.includes(doc.category));
   return problem?problem.name.replace(/\s/g,''):'未分類';
  }
+ function taipeiIndicatorChoices(question){
+  const n=norm(question);
+  // 「怎看」可能是查詢報表或規範，不把它當作排除項目的確認。
+  const ids=/新特約/.test(n)?['taipei-control-06','taipei-control-07','taipei-control-08']:
+   /照片|拍照/.test(n)?['taipei-control-04','taipei-control-16']:
+   /申復|申覆|申訴/.test(n)?['taipei-control-05']:
+   ['taipei-control-14','taipei-control-02','taipei-control-06'];
+  return ids.map(id=>FQ.find(f=>f.id===id)).filter(Boolean);
+ }
+ function chooseTaipeiIndicator(question){
+  const faqs=taipeiIndicatorChoices(question);
+  say('臺北分區已有管控規範與核可問答。請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+'<button type="button" class="lc-choice" data-taipei-source="1">臺北區管控作業指標規範（官方原文，114年12月23日修訂／115年1月費用起）</button><small>候選不代表已判定個案超標或排除；特定指標仍須核對原文項目與適用期間。</small>');
+ }
  function chooseIndicatorCity(city,question){
   const region=indicatorRegions.find(item=>item.cities.includes(city));
   if(!region){say(supportHtml());return}
+  if(region.name==='臺北'){chooseTaipeiIndicator(question);return}
   const doc=documents.find(item=>item.id===region.doc);
   const label=region.name+(region.name.endsWith('區')?'':'區');
   if(doc){
@@ -235,7 +250,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const doc=!/g000|忘帶|沒帶|健保卡|取卡/i.test(q)&&['nhi-south-notes','nhi-central-notes'].includes(region?.doc)?documents.find(d=>d.id===region.doc):null;
   say('請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+(doc?'<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="">'+esc(doc.title)+'（'+esc(doc.kind)+'；含新特約規範）</button>':'')+(!doc&&region?.name!=='臺北'?' <p>本站目前沒有'+esc((region?.name||clinicCity).replace(/區$/,''))+'區的新特約管控資料，不套用其他分區規定。可輸入「轉人工」協助確認。</p>':''));
  }
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q);
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml());return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml());return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml());return}
@@ -330,7 +345,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  armIdle();
  root.addEventListener('click',e=>{
   const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
-  const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+  const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
+  const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){const city=clinicCity;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
