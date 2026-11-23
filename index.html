@@ -205,14 +205,11 @@ html,body{background:#F7F9FC}
 @media (hover:hover){.route.fold .route-head:hover{background:color-mix(in srgb,var(--c) 7%,#fff)}.station.st-fold:not(.open):hover{border-color:color-mix(in srgb,var(--c) 45%,var(--line));box-shadow:0 6px 16px #203A6314}}
 @media(prefers-reduced-motion:reduce){.route.fold.open .stations{animation:none}.route-head .chev,.st-fold .st-a:after{transition:none}}
 
-/* 最後展開的框：左側出現一個指向它、輕輕晃動的箭頭 */
+/* 最後展開的框：右側露出一個小書籤，顏色跟它所屬的大項目一樣 */
+.faq-type,.route{--bm:var(--c)}
 .last-open{position:relative}
-.last-open:after{content:"";position:absolute;left:-26px;top:18px;width:18px;height:16px;background:var(--c,#3D51A3);clip-path:polygon(0 25%,55% 25%,55% 0,100% 50%,55% 100%,55% 75%,0 75%);border-radius:2px;pointer-events:none;animation:lo-arrow-in .3s ease-out,lo-arrow 1.1s ease-in-out .3s infinite}
-.faq-type.fold.last-open:after,.route.fold.last-open:after{top:20px}
-.faq-type-body .last-open:after,.route.fold .stations .last-open:after{left:-14px;width:13px;height:13px;top:20px}
-@keyframes lo-arrow-in{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
-@keyframes lo-arrow{0%,100%{transform:translateX(0)}50%{transform:translateX(5px)}}
-@media(max-width:640px){.last-open:after{left:-15px;width:12px;height:12px}}
+.last-open:after{content:"";position:absolute;right:-9px;top:14px;width:9px;height:30px;background:var(--bm,var(--c,#3D51A3));border-radius:0 5px 5px 0;box-shadow:2px 2px 4px #1E2A4A2E,inset 3px 0 3px -2px #0003;pointer-events:none;transform-origin:0 50%;animation:bm-in .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes bm-in{from{transform:scaleX(0);opacity:0}to{transform:none;opacity:1}}
 @media(prefers-reduced-motion:reduce){.last-open:after{animation:none}}
 </style></head><body>
 <div class="strip" aria-hidden="true"></div>
@@ -342,7 +339,7 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 </script>
 <script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=toys-20261123b"></script>
 <script>
-// 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），讓箭頭指著它；收起它時箭頭也跟著消失
+// 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），在它右側放小書籤；收起它時書籤也跟著消失
 {let last=null;
  function keyOf(el){if(el.matches('.faq-item'))return '#'+el.id;if(el.matches('.faq-type'))return '#'+el.querySelector('.faq-type-body').id;if(el.matches('.route'))return '.route-toggle[data-route="'+el.querySelector('.route-toggle').dataset.route+'"]';if(el.matches('.station'))return '.station[data-id="'+el.dataset.id+'"]';return null}
  function find(k){const n=k&&document.querySelector(k);return n&&n.closest('.faq-item,.faq-type,.route,.station')}
@@ -352,6 +349,6 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
  document.addEventListener('click',e=>check(e.target));
  document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' ')setTimeout(()=>check(e.target))});
  document.addEventListener('toggle',e=>{const d=e.target;if(d.matches&&d.matches('.faq-item'))d.open?mark(d):unmark(d)},true);
- // 清單重新產生後把箭頭補回去
+ // 清單重新產生後把書籤補回去
  const base=render;render=function(){const r=base.apply(this,arguments);if(last){const el=find(last);if(el&&(el.open||el.classList.contains('open')))el.classList.add('last-open');else last=null}return r}}
 </script><script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script><script>{const p=new URLSearchParams(location.search);if(p.get('manual')==='leyizhi-backend')openReader('leyizhi-backend',null,Number(p.get('page'))||1)}</script></body></html>
