@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=answer-lines-20261119"><style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=companions-20261123"><style>
 :root{--ink:#15191E;--muted:#4A5159;--line:#DCE0E4;--panel:#F3F4F2;--blue:#15191E;--blue-dark:#000;--apricot:#15191E;--apricot-soft:#F3F4F2;--apricot-ink:#15191E;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:#fff}
 *{box-sizing:border-box}html{background:#fff}body{margin:0;line-height:1.6;background:#fff}button,input{font:inherit;color:inherit}button,a{touch-action:manipulation}button{cursor:pointer}a{color:var(--ink)}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}
 :focus-visible{outline:3px solid #1D4F91;outline-offset:3px}
@@ -90,7 +90,23 @@ html,body{background:#F7F9FC}
 @media(max-width:900px){.stations{grid-template-columns:1fr}}
 @media(max-width:640px){.page{padding:16px 12px 28px}.top{padding:20px 16px 0;border-radius:18px 18px 0 0}#panel-faq,#panel-docs{padding:18px 16px 24px;border-radius:0 0 18px 18px}.station,.station:not(:has(.warn)){padding:16px}.stations{padding:0;gap:12px}.route{margin-top:26px}.types{grid-template-columns:repeat(2,minmax(0,1fr))}.support{margin-top:20px}.support .button{width:100%}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
-.code-hit{margin:0;padding:10px 12px;border-radius:10px;background:#EEF5FC;color:#244A70;font-size:14px;line-height:1.6}.code-hit p{margin:0 0 8px}.code-hit a{display:block;max-width:100%;background:#fff;border-radius:8px;overflow-x:auto}.code-snip{display:block;width:720px;max-width:none;height:auto;min-height:60px}.edition-warning{display:inline-block;margin:8px 0 0;padding:4px 9px;border-radius:8px;background:#FFF4DE;color:#6B4700;font-size:13px;font-weight:700}</style></head><body>
+.code-hit{margin:0;padding:10px 12px;border-radius:10px;background:#EEF5FC;color:#244A70;font-size:14px;line-height:1.6}.code-hit p{margin:0 0 8px}.code-hit a{display:block;max-width:100%;background:#fff;border-radius:8px;overflow-x:auto}.code-snip{display:block;width:720px;max-width:none;height:auto;min-height:60px}.edition-warning{display:inline-block;margin:8px 0 0;padding:4px 9px;border-radius:8px;background:#FFF4DE;color:#6B4700;font-size:13px;font-weight:700}
+/* 滑鼠移上去的小動畫：只在有滑鼠的裝置、且沒開「減少動態效果」時啟用 */
+@media (hover:hover) and (prefers-reduced-motion:no-preference){
+.type-btn,.station,.faq-item,.button,.icon-btn,.line-btn,.faq-more,.tab,.pic{transition:transform .18s ease,box-shadow .18s ease,background-color .18s ease,border-color .18s ease,color .18s ease}
+.type-btn:hover{transform:translateY(-3px);box-shadow:0 10px 22px #203A6322}
+.type-btn:hover svg{animation:hv-hop .55s ease}
+.station:hover{transform:translateY(-3px);box-shadow:0 12px 26px #203A631C}
+.faq-item:hover{transform:translateY(-1px);box-shadow:0 6px 16px #203A6314}
+.faq-item>summary:before{transition:transform .25s ease,background-color .18s ease,color .18s ease}
+.faq-item:not([open])>summary:hover:before{transform:rotate(90deg)}
+.faq-item>summary:hover{background:#F7FAFF;border-radius:11px}
+.button:hover,.icon-btn:hover,.line-btn:hover,.faq-more:hover{transform:translateY(-2px);box-shadow:0 6px 14px #203A631F}
+.button:active,.icon-btn:active,.line-btn:active,.faq-more:active,.type-btn:active,.tab:active{transform:scale(.96);box-shadow:none}
+.tab:hover{color:var(--ink)}
+.pic:hover{transform:scale(1.04)}
+@keyframes hv-hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-5px) rotate(-8deg)}65%{transform:translateY(0) rotate(6deg)}}
+}</style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
 <header class="top"><p class="eyebrow">樂衍操作小幫手</p><h1>操作指南與手冊</h1><p class="subtitle">先選問題類型，或直接搜尋錯誤代碼、關鍵字。</p>
@@ -212,5 +228,5 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="assistant.js?v=20261123-taipei-control"></script>
+<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=20261123-companions"></script>
 <script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script></body></html>
