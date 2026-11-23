@@ -47,7 +47,9 @@ function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請
  if(/押金.*收據/.test(n)&&/押金收據/.test(p.title))s+=50;
  if(/抽審/.test(n)&&/牙位/.test(n)&&/抽審/.test(p.title)&&/牙位/.test(p.title))s+=80;
  if(/手機/.test(n)&&!/手機/.test(p.title))s-=20;
- return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
+ return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)
+ // 分數很低（未滿 15）又遠低於第一名（不到 45%）的，多半只是碰到「掛號」之類的共同字，不列為候選。
+ .filter((r,i,arr)=>r.score>=15||r.score>=arr[0].score*0.45)}
 // ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
 const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
 function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
