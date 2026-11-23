@@ -2,11 +2,15 @@
 // 用法：LeyanCat.mount(元素, {mode:'page'|'fab', onOpen:function(doc,url){...}})
 (function(){
 const BASE=new URL('./',location.href).href;
-const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
+const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署').replace(/^不是(?:報價|查帳|讀卡機|藥品)(?:而是|是|我要|要)?/,'');
 // 一般看帳查帳先確認院所；特定押金、帳號等主題不走日結分流。
 function isAccountLookup(q){const n=norm(q);if(/押金|欠卡|退費|預付|儲值|點數|補報|申報|抽審|收據|帳號|密碼|帳密/.test(n))return false;return /(?:當天|當日|今天|今日|每天|每日).{0,8}帳|對帳|日結|下診.{0,8}帳|日報表.{0,3}實收|(?:看|查)(?:到|詢)?(?:一下)?(?:現金)?帳|帳.{0,8}(?:看|查)|帳(?:務|本)?(?:在哪|在那|哪邊|哪裡|那邊|那裡)|^現金帳$/.test(n);}
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
 function routeQuestion(q){const n=norm(q);
+ if(/^(?:都不是|不是這個|都不對)$/.test(n))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
+ if(/其他訊息|不是簡訊|^(?:不能發訊息|訊息不能發|訊息發不出)$/.test(n))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
+ if(/帳密忘記|帳號.*(?:哪|忘)/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};
+ if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
  if(/報價|合約|簽約|續約/.test(n)||(!/醫療費用|申報費用|日結費用|收據|掛號費|診察費|部分負擔/.test(n)&&/系統.{0,12}(?:價格|價錢|多少錢|收費|費用)|(?:價格|價錢|多少錢|收費|費用).{0,12}系統|^(?:請問)?(?:價格|價錢|多少錢|收費|費用)(?:是多少|多少|怎麼算|嗎)?$/.test(n)))return {type:'human'};
  if(/(?:現在|目前|大家).*(?:雲端|健保系統).*(?:異常|問題|不能|無法)|(?:雲端|健保系統).*(?:目前|現在).*(?:異常|問題)/.test(n))return {type:'human',message:'目前沒有可核對的即時服務狀態，請由官方人工客服確認；不能以過往異常紀錄判定現在的狀態。'};
  const missing=/這個|這裡|這邊|這兩個/.test(n)&&/跳出|出現|問題|代碼|重設|讀卡機|ic上傳|檢核/.test(n)&&!/(?:[a-z]?\d{4}|不屬於同一人)/i.test(n);
