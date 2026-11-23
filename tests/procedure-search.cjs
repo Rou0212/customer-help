@@ -28,7 +28,7 @@ vm.runInContext(fs.readFileSync('faq.js','utf8'),ctx);
 vm.runInContext(fs.readFileSync('manuals.js','utf8'),ctx);
 const matches=vm.runInContext("FAQS.filter(f=>topicSearchHit('醫令',f.title+' '+f.tags,(f.text||'')+' '+(f.steps||[]).join(' '))).map(f=>f.id)",ctx);
 assert.deepEqual(Array.from(matches),['9999','ic-vs-cloud','batch-26']);
-assert.equal(vm.runInContext("documents.filter(d=>!d.region&&!d.parent&&topicSearchHit('醫令',d.title+' '+d.description+' '+d.keywords,d.fullSteps.join(' '))).map(d=>d.id).join(',')",ctx),'nhi-dentist-handbook-2026');
+assert.equal(vm.runInContext("documents.filter(d=>!d.region&&!d.parent&&topicSearchHit('醫令',d.title+' '+d.description+' '+d.keywords,d.fullSteps.join(' '))).map(d=>d.id).join(',')",ctx),'nhi-dentist-handbook-2026,manual-order-list');
 for(const q of ['醫令上傳','影像醫令上傳率','健保申報','根管未完成率']){
  ctx.query=q;
  assert.equal(vm.runInContext("FAQS.every(f=>topicSearchHit(query,f.title+' '+f.tags,(f.text||'')+' '+(f.steps||[]).join(' '))===searchHit(query,f.title+' '+f.tags+' '+(f.text||'')+' '+(f.steps||[]).join(' ')))",ctx),true,q);

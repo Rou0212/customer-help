@@ -2,7 +2,7 @@
 // 用法：LeyanCat.mount(元素, {mode:'page'|'fab', onOpen:function(doc,url){...}})
 (function(){
 const BASE=new URL('./',location.href).href;
-const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
+const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「」『』（）()]/g,'').replace(/臺/g,'台').replace(/申復|申複/g,'申覆').replace(/日曆/g,'行事曆').replace(/健保局/g,'健保署');
 // 常見說法 → 手冊（客戶口語、錯字與同義詞補在這裡）
 const INTENTS={
 'nhi-claim':['申報','月申報','總表','線上確認','補正','欠卡','點值'],
@@ -27,7 +27,7 @@ const INTENTS={
 const pool=documents.filter(d=>!d.region);
 const codeOf=d=>STATION[d.parent||d.id]||'';
 const bigrams=s=>{const r=new Set();for(let i=0;i<s.length-1;i++)r.add(s.slice(i,i+2));return r};
-const FQ=(typeof FAQS!=='undefined')?FAQS:[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
+const FQ=(typeof FAQS!=='undefined')?FAQS.concat(typeof FUNCTION_INDEX!=='undefined'?FUNCTION_INDEX:[]):[],FG=(typeof FAQ_GROUPS!=='undefined')?FAQ_GROUPS:[];
 const faqPool=FQ.map(f=>({f,toks:[...new Set(f.tags.split(/\s+/).map(norm).filter(t=>t.length>=2))],title:norm(f.title),bg:bigrams(norm(f.title+(f.text||'')+(f.steps||[]).join('')))}));
 // 語音常把「上傳」辨識為「上船」；只在同意書情境校正，避免誤改其他查詢。
 function faqQuery(q){
@@ -39,7 +39,21 @@ function faqQuery(q){
   ? corrected+' 上傳同意書'
   : corrected;
 }
-function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;
+// 通用動作／錯誤詞不是主題證據，不能單靠「找不到、異常、調整」把不同領域接起來。
+const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|怎辦|怎看|什麼|意思|代表|哪些|哪裡|在哪|多少|有沒有|怎麼辦|嗎|的|了|找不到|沒反應|看不到|沒有|無法|失敗|異常|錯誤|調整|修改|新增|設定|查詢|顯示|操作|完成|進行|需要|出現|資料/g,'');
+const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
+function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
+ if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
+ if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
+ const required={'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
+ if(required[p.f.id]&&!required[p.f.id].test(n))return {f:p.f,score:0};
+ if(p.f.id==='progress-1-7'&&/申報|補報|抽審|上傳|簽章/.test(n)&&!/樂晴|掛號|寫卡/.test(n))return {f:p.f,score:0};
+ if(p.f.id==='supplement-review-upload'&&!/抽審|送審/.test(n))return {f:p.f,score:0};
+ if(p.f.id==='e300'&&/補報/.test(n)&&!/e300/i.test(n))return {f:p.f,score:0};
+if(p.f.kind&&typeof functionMatches!=='undefined'&&!functionMatches(n,p.f))return {f:p.f,score:0};p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;
+ if(p.f.kind&&functionMatches(n,p.f))s+=80;
+ if(p.f.id==='registration-time'&&/掛號.*時間|結束時間/.test(n))s+=150;
+ if(p.f.permission&&/不見|沒有|看不到|權限|不能|只能/.test(n))s+=60;
  // Short directory terms are valid candidates; title overlap outranks incidental answer text.
  const titleHits=[...bigrams(n)].filter(b=>p.title.includes(b)).length;
  s+=titleHits*4;
@@ -47,9 +61,7 @@ function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請
  if(/押金.*收據/.test(n)&&/押金收據/.test(p.title))s+=50;
  if(/抽審/.test(n)&&/牙位/.test(n)&&/抽審/.test(p.title)&&/牙位/.test(p.title))s+=80;
  if(/手機/.test(n)&&!/手機/.test(p.title))s-=20;
- return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)
- // 分數很低（未滿 15）又遠低於第一名（不到 45%）的，多半只是碰到「掛號」之類的共同字，不列為候選。
- .filter((r,i,arr)=>r.score>=15||r.score>=arr[0].score*0.45)}
+ return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score).filter((r,i,all)=>r.score>=all[0].score*0.6)}
 // ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
 const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
 function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
@@ -122,6 +134,7 @@ function rank(q){const n=norm(q);if(!n)return [];
  if(n.includes('新特約'))return [];
  const cm=n.match(/(^|[^a-z])([nvuedg])0?(\d{1,2})(?!\d)/);if(cm){const code=cm[2].toUpperCase()+String(cm[3]).padStart(2,'0');const d=pool.find(x=>!x.parent&&STATION[x.id]===code);if(d)return [{d,score:100}]}
  return prepared.map(p=>{let s=0;
+  if(/同意書/.test(n)&&!/同意書/.test(p.d.title+' '+p.d.keywords))return {d:p.d,score:0};
   (INTENTS[p.d.id]||[]).forEach(ph=>{const k=norm(ph);if(n.includes(k))s+=(p.d.parent?20:10)+k.length});
   p.toks.forEach(t=>{if(n.includes(t))s+=Math.min(t.length,6)*1.5});
   if(n.includes(p.title))s+=15;
@@ -179,7 +192,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function open(d){const url=urlOf(d)+(policyPage(d)>1?'&excerptPage='+policyPage(d):'');if(opt.onOpen){opt.onOpen(d,url,policyPage(d));return true}const w=window.open(url,'leyan-manual');if(w){try{w.focus()}catch{}return true}return false}
  function card(d){return '<a class="lc-doc" href="'+urlOf(d)+(policyPage(d)>1?'&excerptPage='+policyPage(d):'')+'" target="leyan-manual" data-id="'+d.id+'"><span><b>'+esc(d.title)+'</b><small>'+esc(d.description)+'</small></span></a>'+(d.id==='nhi-dentist-handbook-2026'&&policyPage(d)>1?'<small>對應摘錄第 '+policyPage(d)+' 頁；請核對原文與現行公告。</small>':'')+(OFFICIAL_URLS[d.id]?'<a class="lc-official" href="'+esc(OFFICIAL_URLS[d.id])+'" target="_blank" rel="noopener noreferrer">前往官方解鎖卡網站 ↗</a>':'')}
  function policyImage(hit){const src=BASE+'images/nhi-payment/'+hit.code+'.webp';return '<div class="lc-payment"><b>'+esc(hit.code)+' 支付標準原文截圖</b><a href="'+src+'" target="_blank" rel="noopener" aria-label="放大檢視 '+esc(hit.code)+' 原文截圖"><img src="'+src+'" alt="'+esc(hit.code)+' 的支付標準原文表格與註記" decoding="async"></a><small>摘自 2026 年牙科支付標準表第 '+hit.pages[0]+' 頁。左右滑動看完整表格，點圖可放大；實際申報請核對健保署現行公告。</small></div>'}
- function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(f.form?'<p><a class="lc-official" href="'+BASE+esc(f.form.url)+'" download="'+esc(f.form.filename)+'">下載空白服務事項確認單（PDF）</a></p>'+supportHtml(pet.name):'')+(f.sourceUrl?'<p class="lc-alt"><a href="'+esc(f.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(f.sourceLabel||'查看官方原文')+' ↗</a></p>':'')+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')}
+ function faqHtml(f){const g=FG.find(x=>x.id===f.group)||{color:'#15191E'},rel=f.doc&&pool.find(x=>x.id===f.doc);return '<div class="lc-faq" style="--c:'+g.color+'"><b>'+esc(f.title)+'</b>'+(f.text?'<p>'+esc(f.text)+'</p>':'')+(f.steps?'<ol>'+f.steps.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':'')+(f.img?'<a class="lc-img" href="'+BASE+'images/faq/'+f.img+'.png" target="_blank" rel="noopener"><img src="'+BASE+'images/faq/'+f.img+'.png" alt="'+esc(f.title)+' 圖卡"></a>':'')+'</div>'+(f.form?'<p><a class="lc-official" href="'+BASE+esc(f.form.url)+'" download="'+esc(f.form.filename)+'">下載空白服務事項確認單（PDF）</a></p>'+supportHtml(pet.name):'')+(f.page?'<button type="button" class="lc-choice" data-function-page="'+f.page+'">核對原手冊第 '+f.page+' 頁</button>':'')+(f.source?'<p>'+esc(f.source)+'</p>':'')+(f.sourceUrl?'<p class="lc-alt"><a href="'+esc(f.sourceUrl)+'" target="_blank" rel="noopener noreferrer">'+esc(f.sourceLabel||'查看官方原文')+' ↗</a></p>':'')+(f.docs||[]).map(id=>pool.find(d=>d.id===id)).filter(Boolean).map(d=>card(d)).join('')+(rel?'<p class="lc-alt">相關手冊：</p>'+card(rel):'')}
  function faqChoice(f){return '<button type="button" class="lc-choice" data-faq="'+esc(f.id)+'">常見問題：'+esc(f.title)+'</button>'}
  function docChoice(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();const label=hit&&hit.status==='found'?`牙科支付標準：${hit.code}（摘錄第 ${hit.pages[0]} 頁）`:`操作手冊：${d.title}`;return '<button type="button" class="lc-choice" data-doc="'+esc(d.id)+'">'+esc(label)+'</button>'}
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
@@ -288,7 +301,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const doc=!/g000|欠卡|忘帶|沒帶|健保卡|取卡/i.test(q)&&['nhi-south-notes','nhi-central-notes'].includes(region?.doc)?documents.find(d=>d.id===region.doc):null;
   say('請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+(doc?'<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="">'+esc(doc.title)+'（'+esc(doc.kind)+'；含新特約規範）</button>':'')+(!doc&&region?.name!=='臺北'?' <p>本站目前沒有'+esc((region?.name||clinicCity).replace(/區$/,''))+'區的新特約管控資料，不套用其他分區規定。可輸入「轉人工」協助確認。</p>':''));
  }
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml(pet.name));return}
@@ -391,7 +404,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{
   const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
-  const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+  const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){const city=clinicCity;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
