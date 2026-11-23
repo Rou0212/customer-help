@@ -134,7 +134,13 @@ html,body{background:#F7F9FC}
 @keyframes gl-pop{0%{transform:scale(.94);opacity:0}100%{transform:none;opacity:1}}
 @keyframes gl-breathe{0%,100%{box-shadow:0 0 0 2px #7FB8F0,0 0 22px #4FA3F066,0 20px 60px #0005}50%{box-shadow:0 0 0 2px #9FD0FF,0 0 40px #4FA3F0AA,0 20px 60px #0005}}
 @keyframes gl-in{0%{box-shadow:0 0 0 2px #9FCBF500,0 0 0 #4FA3F000}60%{box-shadow:0 0 0 3px #9FCBF5,0 0 26px #4FA3F088}100%{box-shadow:0 0 0 2px #9FCBF5,0 0 18px #4FA3F055}}
-}</style></head><body>
+}
+/* 頁面最右下角的樂衍 LOGO；留出右下角小動物按鈕的空間，避免被蓋住 */
+.site-logo{display:block;width:max-content;margin:4px 0 0 auto;line-height:0;border-radius:10px}
+.site-logo img{display:block;width:168px;height:auto;mix-blend-mode:multiply}
+@media(max-width:1400px){.site-logo{margin-bottom:84px}}
+@media(max-width:640px){.site-logo img{width:128px}}
+</style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
 <header class="top"><p class="eyebrow">樂衍操作小幫手</p><h1>操作指南與手冊</h1><p class="subtitle">先選問題類型，或直接搜尋錯誤代碼、關鍵字。</p>
@@ -148,6 +154,7 @@ html,body{background:#F7F9FC}
 <div class="empty" id="empty" hidden><p>找不到相關內容，試試其他情境、主題或錯誤代碼。</p><button type="button" id="reset">清除搜尋</button></div>
 <section class="support"><span class="support-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/></svg></span><span class="support-text"><strong>轉人工客服</strong>小黑貓只能依網站內容提供指引；個案問題請聯絡官方 LINE@ <b>@leyan</b>，可點連結或掃描 QR code 加入。</span><div class="support-actions"><a class="button line-button" href="https://line.me/R/ti/p/%40leyan" target="_blank" rel="noopener noreferrer">加入 LINE@ @leyan</a><a class="button outline" href="tel:0422518815,9">撥打 04-2251-8815 分機 9</a></div><a class="support-qr" href="https://line.me/R/ti/p/%40leyan" target="_blank" rel="noopener noreferrer" aria-label="掃描 QR code 加入官方 LINE@ @leyan"><img src="images/line-official-qr.png" alt="官方 LINE@ @leyan 加入好友 QR code" loading="lazy"></a></section>
 <footer>部分操作手冊已遮蔽個人資料；牙科支付標準為全聯會手冊原頁摘錄，分區文件為整理版。流程僅供參考，實際作業以官方公告與現行系統畫面為準。</footer><noscript>請開啟 JavaScript 以使用搜尋、分類與 PDF 閱讀器。</noscript>
+<a class="site-logo" href="https://rou0212.github.io/customer-help/" aria-label="樂衍 Le-yan Co., Ltd. 回到首頁"><img src="images/leyan-logo.png" alt="樂衍 Le-yan Co., Ltd." width="168" height="126"></a>
 </main>
 <div id="lc" class="lc-fab-wrap"></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
