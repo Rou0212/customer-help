@@ -140,6 +140,14 @@ html,body{background:#F7F9FC}
 .site-logo img{display:block;width:168px;height:auto;mix-blend-mode:multiply}
 @media(max-width:1400px){.site-logo{margin-bottom:84px}}
 @media(max-width:640px){.site-logo img{width:128px}}
+
+/* 兩個分頁用不同的淡色區分：常見問題＝淡藍、操作手冊＝淡橘 */
+#tab-faq{--tc:#2F64A8;--tb:#F1F6FF;--tbs:#E3EEFF;--tl:#BFD6F6}
+#tab-docs{--tc:#A65A1C;--tb:#FFF6EC;--tbs:#FFEBD6;--tl:#F3D2AE}
+.tabs .tab{background:var(--tb);color:var(--tc);border:1px solid var(--tl);border-bottom:0;opacity:.85}
+.tabs .tab .n{color:inherit;opacity:.75}
+.tabs .tab:hover{color:var(--tc);opacity:1;background:var(--tbs)}
+.tabs .tab[aria-selected=true]{background:var(--tbs);color:var(--tc);border-color:var(--tl);box-shadow:inset 0 3px 0 var(--tc);border-bottom:2px solid var(--tbs);opacity:1}
 </style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
