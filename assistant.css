@@ -108,3 +108,8 @@ body.modal-open .lc-fab-wrap{display:none}
 .lc-swap{flex:none;margin-left:auto;min-height:32px;padding:0 10px;border:1.5px solid var(--lc-line);border-radius:999px;background:#fff;color:var(--lc-ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}.lc-swap:hover{border-color:#3468A8;background:#F7FAFF}
 /* 滑鼠移到右下角夥伴：搖尾巴、微微跳一下 */
 @media (hover:hover) and (prefers-reduced-motion:no-preference){.lc-fab{transition:transform .2s ease,box-shadow .2s ease}.lc-fab:hover{transform:translateY(-3px);box-shadow:0 10px 24px #0003}.lc-fab:hover .lc-tail{animation:lc-wag .36s ease-in-out 3}}
+/* 打開的對話框發光 */
+.lc-mode-fab .lc-panel{box-shadow:0 0 0 2px #7FB8F0,0 0 26px #4FA3F088,0 14px 40px #0003}
+@media (prefers-reduced-motion:no-preference){.lc-mode-fab .lc-panel:not([hidden]){animation:lc-gl-pop .3s cubic-bezier(.2,.9,.3,1.2),lc-gl-breathe 3s ease-in-out .3s infinite;transform-origin:100% 100%}
+@keyframes lc-gl-pop{0%{transform:scale(.9);opacity:0}100%{transform:none;opacity:1}}
+@keyframes lc-gl-breathe{0%,100%{box-shadow:0 0 0 2px #7FB8F0,0 0 20px #4FA3F066,0 14px 40px #0003}50%{box-shadow:0 0 0 2px #9FD0FF,0 0 36px #4FA3F0AA,0 14px 40px #0003}}}

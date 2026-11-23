@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=companions-20261123"><style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=companions-glow"><style>
 :root{--ink:#15191E;--muted:#4A5159;--line:#DCE0E4;--panel:#F3F4F2;--blue:#15191E;--blue-dark:#000;--apricot:#15191E;--apricot-soft:#F3F4F2;--apricot-ink:#15191E;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:#fff}
 *{box-sizing:border-box}html{background:#fff}body{margin:0;line-height:1.6;background:#fff}button,input{font:inherit;color:inherit}button,a{touch-action:manipulation}button{cursor:pointer}a{color:var(--ink)}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}
 :focus-visible{outline:3px solid #1D4F91;outline-offset:3px}
@@ -115,6 +115,16 @@ html,body{background:#F7F9FC}
 .support:hover .support-qr img{box-shadow:0 0 18px #06C75566;transform:scale(1.03)}
 @keyframes hv-ping{0%{box-shadow:0 0 0 0 #17764C88}100%{box-shadow:0 0 0 14px #17764C00}}
 @keyframes hv-hop{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-5px) rotate(-8deg)}65%{transform:translateY(0) rotate(6deg)}}
+}
+/* 點開的對話框發光：手冊閱讀視窗、展開的常見問題 */
+.modal-panel{box-shadow:0 0 0 2px #7FB8F0,0 0 28px #4FA3F088,0 20px 60px #0005}
+.faq-item[open]{box-shadow:0 0 0 2px #9FCBF5,0 0 18px #4FA3F055}
+@media (prefers-reduced-motion:no-preference){
+.modal-panel{animation:gl-pop .32s cubic-bezier(.2,.9,.3,1.2),gl-breathe 3s ease-in-out .32s infinite}
+.faq-item[open]{animation:gl-in .4s ease}
+@keyframes gl-pop{0%{transform:scale(.94);opacity:0}100%{transform:none;opacity:1}}
+@keyframes gl-breathe{0%,100%{box-shadow:0 0 0 2px #7FB8F0,0 0 22px #4FA3F066,0 20px 60px #0005}50%{box-shadow:0 0 0 2px #9FD0FF,0 0 40px #4FA3F0AA,0 20px 60px #0005}}
+@keyframes gl-in{0%{box-shadow:0 0 0 2px #9FCBF500,0 0 0 #4FA3F000}60%{box-shadow:0 0 0 3px #9FCBF5,0 0 26px #4FA3F088}100%{box-shadow:0 0 0 2px #9FCBF5,0 0 18px #4FA3F055}}
 }</style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
@@ -237,5 +247,5 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=20261123-companions3"></script>
+<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=20261123-companions4"></script>
 <script>const lc=LeyanCat.mount(document.getElementById('lc'),{mode:'fab',onOpen:(d,url,startPage)=>{lc.close();goTo(d.parent||d.id);openReader(d.id,null,startPage)}});</script></body></html>
