@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const c=vm.createContext({URL,location:{href:'https://example.test/'},window:{}});
+for(const f of ['manuals.js','faq.js','assistant.js'])vm.runInContext(fs.readFileSync(f,'utf8'),c);
+const cat=c.window.LeyanCat;
+for(const q of ['醫令','醫令代碼','拋轉'])assert(cat.rank(q).length||cat.rankFaq(q).length,q);
+assert.equal(cat.rankFaq('欠卡押金收據')[0].f.id,'deposit-receipt');
+assert.equal(cat.rankFaq('抽審牙位錯誤')[0].f.id,'review-tooth-correction');
+assert(!cat.rank('停電要怎麼關機').some(r=>r.d.id==='ic-card-incident-form'));
+assert.equal(cat.rankFaq('停電要怎麼關機')[0].f.id,'power-outage');
+assert.equal(cat.rankFaq('ZZZ不存在123').length,0);
+assert(cat.rankFaq('如何上船同意書')[0].f.title.includes('上傳'));
+console.log('PASS audit short terms, receipt, tooth correction, unrelated shutdown exclusion, near-homophone');

@@ -10,12 +10,12 @@ const INTENTS={
 'nhi-appeal':['申覆','補件','專業審查','小綠人','申覆上傳'],
 'nhi-dispute':['爭議','爭審','爭議審議'],
 'tooth-correction':['牙位','牙位更正','拔牙更正','牙位錯','更正清單'],
-'nhi-dentist-handbook-2026':['牙科支付標準','支付標準表','牙醫支付標準','給付項目','牙結石清除','牙結石','氟化物治療','特定疾病病人牙科就醫安全','高風險疾病口腔照護','91003C','91004C','91090C','P3601C','P7302C'],
+'nhi-dentist-handbook-2026':['醫令代碼','牙科支付標準','支付標準表','牙醫支付標準','給付項目','牙結石清除','牙結石','氟化物治療','特定疾病病人牙科就醫安全','高風險疾病口腔照護','91003C','91004C','91090C','P3601C','P7302C'],
 'nhi-doctor-access':['授權','受僱醫師','新醫師vpn','醫師權限','vpn權限','新增醫師'],
 'nhi-clinic-hours':['看診時段','門診時段','掛號費','連假','春節','快易通','長假'],
 'nhi-lab-upload':['檢驗','檢查結果','每日上傳','xml'],
 'nhi-image-upload':['影像上傳','x光上傳','醫療影像','每日影像'],
-'emr-sign':['簽章','電子病歷','emr','加簽','簽病歷','醫事人員卡密碼'],
+'emr-sign':['拋轉','簽章','電子病歷','emr','加簽','簽病歷','醫事人員卡密碼'],
 'emr-cloud-sign':['雲端簽章','雲端emr','emr加簽連結','hca元件','跨平台網頁元件'],
 'perio-chart':['牙周','囊袋','牙菌斑','probing','牙周病歷'],
 'card-reader-errors':['讀卡機','讀不到卡','卡讀不到','讀不到','讀卡','讀取失敗','無法讀卡','錯誤碼','錯誤代碼','卡片錯誤','ic卡錯誤','認證失敗','com埠','安全模組'],
@@ -39,7 +39,15 @@ function faqQuery(q){
   ? corrected+' 上傳同意書'
   : corrected;
 }
-function rankFaq(q){const n=faqQuery(q);if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
+function rankFaq(q){const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];return faqPool.map(p=>{let s=0;p.toks.forEach(t=>{if(n.includes(t))s+=/^\d{4}$/.test(t)?55:Math.min(t.length,6)*3});if(n.includes(p.title))s+=15;let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o;
+ // Short directory terms are valid candidates; title overlap outranks incidental answer text.
+ const titleHits=[...bigrams(n)].filter(b=>p.title.includes(b)).length;
+ s+=titleHits*4;
+ if(n.length>=2&&p.title.includes(n))s+=15;
+ if(/押金.*收據/.test(n)&&/押金收據/.test(p.title))s+=50;
+ if(/抽審/.test(n)&&/牙位/.test(n)&&/抽審/.test(p.title)&&/牙位/.test(p.title))s+=80;
+ if(/手機/.test(n)&&!/手機/.test(p.title))s-=20;
+ return {f:p.f,score:s}}).filter(r=>r.score>=10).sort((a,b)=>b.score-a.score)}
 // ---- 看圖：在瀏覽器內用 Tesseract.js 辨識截圖文字（圖片不會上傳）----
 const KNOWN_CODES=new Set();FQ.forEach(f=>f.tags.split(/\s+/).forEach(t=>{if(/^\d{4}$/.test(t))KNOWN_CODES.add(t)}));pool.forEach(d=>(d.keywords.match(/\b\d{4}\b/g)||[]).forEach(c=>KNOWN_CODES.add(c)));
 function analyzeScreen(raw){const t=norm(raw.replace(/[OoＯ](?=\d{3})/g,'0'));const codes=[...new Set((t.match(/\d{4}/g)||[]).filter(c=>KNOWN_CODES.has(c)))];
@@ -117,6 +125,7 @@ function rank(q){const n=norm(q);if(!n)return [];
   if(n.includes(p.title))s+=15;
   if(/\d{4}/.test(n)&&p.d.id==='card-reader-errors'){const nums=n.match(/\d{4}/g);if(nums.some(x=>p.d.keywords.includes(x)))s+=40}
   if(n.length>=2){let o=0;bigrams(n).forEach(b=>{if(p.bg.has(b))o++});s+=o*1.2}
+  if(/關機/.test(n)&&p.d.id==='ic-card-incident-form'&&!/報備|健保卡|異常/.test(n))s=0;
   if(p.d.parent)s-=4;
   return {d:p.d,score:s}}).filter(r=>r.score>=8).sort((a,b)=>b.score-a.score)}
 const urlOf=d=>BASE+'?doc='+encodeURIComponent(d.parent?d.id:codeOf(d))+'&read=1';
@@ -233,13 +242,14 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const n=norm(question);
   // 「怎看」可能是查詢報表或規範，不把它當作排除項目的確認。
   const ids=/新特約/.test(n)?['taipei-control-06','taipei-control-07','taipei-control-08']:
+   /超標/.test(n)?['taipei-control-02','taipei-control-01','taipei-control-05']:
    /照片|拍照/.test(n)?['taipei-control-04','taipei-control-16']:
    /申復|申覆|申訴/.test(n)?['taipei-control-05']:
    ['taipei-control-14','taipei-control-02','taipei-control-06'];
   return ids.map(id=>FQ.find(f=>f.id===id)).filter(Boolean);
  }
  function chooseTaipeiIndicator(question){
-  const faqs=taipeiIndicatorChoices(question);
+  const faqs=[...(/怎看|怎麼看|怎麼查|哪查|在哪|指標/.test(norm(question))?[FQ.find(f=>f.id==='batch-19')]:[]),...taipeiIndicatorChoices(question)].filter(Boolean);
   say('臺北分區已有管控規範與核可問答。請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+'<button type="button" class="lc-choice" data-taipei-source="1">臺北區管控作業指標規範（官方原文，114年12月23日修訂／115年1月費用起）</button><small>候選不代表已判定個案超標或排除；特定指標仍須核對原文項目與適用期間。</small>');
  }
  function chooseIndicatorCity(city,question){
@@ -267,13 +277,13 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const region=indicatorRegions.find(r=>r.cities.includes(city));
   const ids=['g000-no-card',...(region?.name==='臺北'?['taipei-control-06','taipei-control-07','taipei-control-08']:[])];
   const hits=ids.map(id=>FQ.find(f=>f.id===id)).filter(Boolean);
-  if(/g000|忘帶|沒帶|健保卡|取卡/i.test(q))return hits.filter(f=>f.id==='g000-no-card');
+  if(/g000|欠卡|忘帶|沒帶|健保卡|取卡/i.test(q))return hits.filter(f=>f.id==='g000-no-card');
   return hits.sort((a,b)=>(a.id==='g000-no-card')-(b.id==='g000-no-card'));
  }
  function chooseNewContract(q){
   const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));
   const faqs=newContractFaqs(q,clinicCity);
-  const doc=!/g000|忘帶|沒帶|健保卡|取卡/i.test(q)&&['nhi-south-notes','nhi-central-notes'].includes(region?.doc)?documents.find(d=>d.id===region.doc):null;
+  const doc=!/g000|欠卡|忘帶|沒帶|健保卡|取卡/i.test(q)&&['nhi-south-notes','nhi-central-notes'].includes(region?.doc)?documents.find(d=>d.id===region.doc):null;
   say('請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+(doc?'<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="">'+esc(doc.title)+'（'+esc(doc.kind)+'；含新特約規範）</button>':'')+(!doc&&region?.name!=='臺北'?' <p>本站目前沒有'+esc((region?.name||clinicCity).replace(/區$/,''))+'區的新特約管控資料，不套用其他分區規定。可輸入「轉人工」協助確認。</p>':''));
  }
  function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
@@ -385,11 +395,14 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
   let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){countQuestion(city,'未分類');wait.innerHTML=pet.sound+'…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
   if(how==='unclear'){countQuestion(city,'未分類');wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我再列出可能的主題讓你確認。';log.scrollTop=log.scrollHeight;return}
-  const a=analyzeScreen(text);
-  countQuestion(city,questionCategory(a.faqs[0]?.f,a.doc));
-  if(!a.faqs.length&&!a.doc){wait.innerHTML='我看不出是哪個問題。可以直接輸入畫面上的錯誤代碼。'+supportHtml();return}
-  const docs=a.doc?[{d:a.doc}]:[];
-  wait.innerHTML=(how==='full'?'這張圖辨識得不太清楚，請特別核對下面的主題。':'我找到可能的主題，請先確認：')+choices(a.faqs,docs)+'<small class="lc-choice-hint">都不是？請直接輸入畫面上的錯誤代碼。</small>';log.scrollTop=log.scrollHeight}
+  if(city!==clinicCity){wait.innerHTML='縣市已切換，請依目前縣市重新輸入問題。';return}
+  // Never treat a partial four-digit OCR hit as a five-digit medical procedure.
+  const recognized=String(text).replace(/([\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])/g,'$1').trim();
+  wait.innerHTML='辨識文字僅供核對，請修正後按「用這段文字查詢」，再確認候選主題。<br><textarea class="lc-ocr-text" aria-label="核對或修正辨識文字" rows="3" style="width:100%;box-sizing:border-box"></textarea><button type="button" class="lc-choice lc-ocr-query">用這段文字查詢</button><small>看不清楚時，可直接改填醫令代碼（如 92133C、91021）或問題文字；圖片不會上傳。</small>';
+  wait.querySelector('textarea').value=recognized;
+  wait.querySelector('button').onclick=()=>{const q=wait.querySelector('textarea').value.trim();if(q)ask(q);else wait.querySelector('textarea').focus()};
+  log.scrollTop=log.scrollHeight}
+
  const fileIn=$('.lc-file');$('.lc-pic').onclick=()=>fileIn.click();fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
  root.addEventListener('paste',e=>{const it=[...(e.clipboardData||{}).items||[]].find(x=>x.type&&x.type.startsWith('image/'));if(it){e.preventDefault();look(it.getAsFile())}});
  panel.addEventListener('dragover',e=>{e.preventDefault();panel.classList.add('lc-drop')});panel.addEventListener('dragleave',()=>panel.classList.remove('lc-drop'));
