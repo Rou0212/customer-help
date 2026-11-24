@@ -114,15 +114,21 @@ body.modal-open .lc-fab-wrap{display:none}
 @keyframes lc-gl-pop{0%{transform:scale(.9);opacity:0}100%{transform:none;opacity:1}}
 @keyframes lc-gl-breathe{0%,100%{box-shadow:0 0 0 2px #7FB8F0,0 0 20px #4FA3F066,0 14px 40px #0003}50%{box-shadow:0 0 0 2px #9FD0FF,0 0 36px #4FA3F0AA,0 14px 40px #0003}}}
 
-/* Keep round actions independent of full-width candidate buttons. */
-.lc-round-bar{flex:none;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px;padding:6px 12px;border-top:1px solid var(--lc-line)}
-.lc-round-bar small{grid-column:1;min-width:0;color:var(--lc-muted);font-size:12px;line-height:1.4}
-.lc-round-bar button.lc-choice{grid-row:1;display:inline-flex;align-items:center;justify-content:center;width:auto;min-height:32px;margin:0;padding:4px 10px;border-radius:8px;font-size:13px;white-space:nowrap}
-.lc-round-bar button[data-round="flush"]{grid-column:2}.lc-round-bar button[data-round="reset"]{grid-column:3}
-.lc-root .lc-form{flex:none;gap:6px;padding:8px 10px 10px}
-.lc-root .lc-input{flex:1 1 0;width:0;min-width:0;padding:0 8px}
-.lc-root .lc-pic,.lc-root .lc-mic{width:38px;height:44px}
-.lc-root .lc-send{height:44px;padding:0 10px}.lc-root .lc-input{height:44px}
-@media(max-width:640px){.lc-fab-wrap .lc-panel{bottom:76px;height:min(500px,calc(100dvh - 108px))}.lc-round-bar{padding:5px 10px;gap:4px}.lc-quick{padding:6px 10px}}
-
-.lc-round-bar small:empty{display:none}
+/* Compact toolbar: pending only; candidate buttons retain full-width sizing. */
+.lc-round-bar{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 12px;border-top:1px solid var(--lc-line)}
+.lc-round-bar[hidden]{display:none}
+.lc-round-bar small{min-width:0;color:var(--lc-muted);font-size:12px;line-height:1.4}
+.lc-round-bar button.lc-choice{flex:none;display:inline-flex;align-items:center;width:auto;min-height:32px;margin:0;padding:4px 10px;border-radius:8px;font-size:13px;white-space:nowrap}
+.lc-head-actions{display:flex;align-items:center;gap:5px;margin-left:auto;flex:none}
+.lc-head .lc-swap{margin-left:0}
+.lc-new{flex:none;min-height:32px;padding:4px 9px;border:1px solid var(--lc-line);border-radius:999px;background:#fff;color:var(--lc-ink);font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}
+.lc-new:hover{border-color:#3468A8;background:#F7FAFF}
+.lc-divider{align-self:stretch;max-width:100%;margin:8px 0;padding:8px 0 0;border-top:1px dashed var(--lc-line);border-radius:0;color:var(--lc-muted);background:none;text-align:center;font-size:12px;line-height:1.5}
+.lc-user{background:#DCE8FC;color:var(--lc-ink)}
+.lc-bot{background:#F6F7F9;border:1px solid #E8EBF0}
+.lc-root .lc-form{flex:none;gap:5px;padding:8px 10px 10px}
+.lc-root .lc-input{flex:1 1 0;width:0;min-width:0;height:44px;padding:0 8px}
+.lc-root .lc-pic,.lc-root .lc-mic{width:32px;height:44px;border:1px solid var(--lc-line);border-radius:9px}
+.lc-root .lc-pic svg,.lc-root .lc-mic svg{width:19px;height:19px}
+.lc-root .lc-send{height:44px;padding:0 9px}
+@media(max-width:640px){.lc-fab-wrap .lc-panel{bottom:76px;height:min(500px,calc(100dvh - 108px))}.lc-head{flex-wrap:wrap;gap:4px 6px}.lc-head-actions{justify-content:flex-end;flex-basis:100%}.lc-head .lc-close{width:32px;height:32px}.lc-head .lc-city-bar{flex:1;min-width:0}.lc-round-bar{padding:5px 10px}.lc-quick{padding:6px 10px}}

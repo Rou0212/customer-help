@@ -249,7 +249,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let pet=PETS[petKey];root.dataset.pet=petKey;
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟'+pet.name+'助手">'+pet.svg+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="'+pet.name+'助手"'+(mode==='fab'?' hidden':'')+'>'+
- '<div class="lc-head">'+(mode==='page'?pet.svg:'')+'<strong class="lc-title">'+pet.name+'</strong><button type="button" class="lc-swap" aria-haspopup="menu" title="換一個夥伴陪你">🐾 換夥伴</button>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div>'+
+ '<div class="lc-head">'+(mode==='page'?pet.svg:'')+'<strong class="lc-title">'+pet.name+'</strong><div class="lc-head-actions"><button type="button" class="lc-new" data-round="reset">新問題</button><button type="button" class="lc-swap" aria-haspopup="menu" title="換一個夥伴陪你">🐾 換夥伴</button>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div></div>'+
  '<div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或文件代碼…">'+
@@ -380,23 +380,25 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
 
  let roundEpoch=0;
  function invalidateChoices(){for(const b of log.querySelectorAll('button'))b.disabled=true;for(const a of log.querySelectorAll('a')){a.removeAttribute('href');a.setAttribute('aria-disabled','true')}}
- const roundBar=document.createElement('div');roundBar.className='lc-round-bar';
- roundBar.innerHTML='<small role="status" aria-live="polite"></small><button type="button" class="lc-choice" data-round="flush">立即查詢</button><button type="button" class="lc-choice" data-round="reset">新問題</button>';
+ const roundBar=document.createElement('div');roundBar.className='lc-round-bar';roundBar.hidden=true;
+ roundBar.innerHTML='<small role="status" aria-live="polite"></small><button type="button" class="lc-choice" data-round="flush">立即查詢</button>';
  $('.lc-form').before(roundBar);
  const roundStatus=roundBar.querySelector('small');
- const round=createQuestionRound({run:q=>{roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundStatus.textContent='請先選擇這段文字的用途。';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
- function resetRound(){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundStatus.textContent=''}
+ const round=createQuestionRound({run:q=>{roundBar.hidden=true;roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundBar.hidden=false;roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundBar.hidden=true;roundStatus.textContent='';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
+ function newDivider(){const el=say('已開始新問題，前面的內容不會再一起搜尋。','divider');el.setAttribute('role','status')}
+ function resetRound(showDivider=false){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundBar.hidden=true;roundStatus.textContent='';if(showDivider){input.value='';newDivider()}}
  function ask(q){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
   roundEpoch++;say(esc(q),'user');input.value='';
   if(humanRequest(q)){resetRound();query(q);return}
-  if(/^(?:新問題|重新開始|重置)$/.test(q)){resetRound();return}
+  if(/^(?:新問題|重新開始|重置)$/.test(q)){resetRound(true);return}
   if(/^(?:立即查詢|現在查詢)$/.test(q)){round.flush();return}
   const fixed=accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(norm(q));
   invalidateChoices();
-  if(fixed){round.reset();query(q);return}
+  if(fixed){round.reset();roundBar.hidden=true;query(q);return}
   accountClinicPending=false;round.submit(q);
  }
- roundBar.onclick=e=>{const b=e.target.closest('[data-round]');if(!b)return;if(b.dataset.round==='reset')resetRound();else round.flush()};
+ roundBar.onclick=e=>{if(e.target.closest('[data-round="flush"]'))round.flush()};
+ $('.lc-new').onclick=()=>{resetRound(true);input.focus()};
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
  let runnerEl=null;const catEl=()=>runnerEl?runnerEl.querySelector('.lc-cat'):root.querySelector('.lc-cat');
@@ -514,7 +516,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  if(swapBtn)swapBtn.addEventListener('click',()=>{const r=swapBtn.getBoundingClientRect();openMenu(r.left,r.bottom+4,false,true)});
  armIdle();
  root.addEventListener('click',e=>{
-  if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
+  if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();if(action==='new'){roundEpoch++;accountClinicPending=false;lastQuestion='';newDivider()}round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
   const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};

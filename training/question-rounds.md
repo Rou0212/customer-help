@@ -9,3 +9,9 @@
 - OCR results and their buttons carry a round epoch and city check so stale images cannot submit into a later round.
 
 Verification: run `for f in tests/*.cjs; do node "$f" || exit 1; done`. `tests/question-round.cjs` uses a fake clock for exact debounce / 60-second / cancellation assertions. Browser acceptance: split input, correction, candidate confirmation, supplementary error code, ambiguous change/new selection, account clinic follow-up, human request and city switch while timer pending. Check mobile overflow and browser errors.
+
+## Compact conversation UI
+
+- Header 新問題 resets local state, cancels pending queries, invalidates old controls, clears the draft, and inserts a muted divider without deleting history. Choosing 問新問題 in a disambiguation also inserts a divider before its new query runs.
+- The status / 立即查詢 row is visible only while a debounce batch is pending. It is hidden initially, after a query, during topic disambiguation, and on reset / human handoff / city switch.
+- Check both index.html floating widget (480px desktop) and cat.html at desktop and 390px; verify reset in header, no blank toolbar, pending-only immediate action, retained history with disabled old candidates, and no horizontal overflow.
