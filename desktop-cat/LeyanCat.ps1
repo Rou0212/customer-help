@@ -74,6 +74,8 @@ public class LeyanCatPet : Form
     ToolStripMenuItem playItem;
     WandForm wand;
     const int PLAY_TICKS = 400;
+    // 跑滾輪：inWheel＝已經進到滾輪裡；wheelBoost＝動滑鼠、點牠累積的速度
+    bool inWheel = false; double wheelBoost = 0; Point lastCur;
 
     public LeyanCatPet(string url, string script)
     {
@@ -171,6 +173,16 @@ public class LeyanCatPet : Form
         wand.Kind = ToyKinds[pet];
         mode = 2; modeTicks = 0; hopY = 0; hopV = 0; py = Top; x = Left;
         playItem.Text = "收起" + ToyNames[pet];
+        wand.Parked = false; inWheel = false; wheelBoost = 0; lastCur = Cursor.Position;
+        if (pet == 4)
+        {
+            // 滾輪放在小倉鼠前面的地上（滾輪內側底部剛好是地面）
+            Rectangle wa = Screen.FromControl(this).WorkingArea;
+            int cx = Left + W / 2 + 120 * dir;
+            if (cx > wa.Right - 80 || cx < wa.Left + 80) { dir = -dir; cx = Left + W / 2 + 120 * dir; }
+            cx = Math.Max(wa.Left + 80, Math.Min(wa.Right - 80, cx));
+            wand.Parked = true; wand.Center = new Point(cx, GroundTop(wa) + H - 57);
+        }
         wand.Show(); wand.Follow();
         Say(pet == 4 ? "吱！滾輪！衝衝衝～" : "喵！那是什麼！", 40);
     }
@@ -178,7 +190,7 @@ public class LeyanCatPet : Form
     void EndPlay()
     {
         if (mode != 2) return;
-        mode = 0; hopY = 0; hopV = 0;
+        mode = 0; hopY = 0; hopV = 0; inWheel = false;
         playItem.Text = ToyMenus[pet];
         if (wand != null) wand.Hide();
         falling = true; vy = 0;
@@ -191,6 +203,7 @@ public class LeyanCatPet : Form
     {
         modeTicks++;
         if (modeTicks > PLAY_TICKS) { EndPlay(); return; }
+        if (wand.Parked) { WheelStep(ground); return; }
         wand.Follow();
         Point c = Cursor.Position;
         Rectangle sb = Screen.FromPoint(c).Bounds;
@@ -218,11 +231,41 @@ public class LeyanCatPet : Form
         Location = new Point((int)x, (int)(py - hopY));
     }
 
+    // 小倉鼠跑滾輪：先走到滾輪那裡爬進去，之後在裡面原地跑；動滑鼠越多跑越快
+    void WheelStep(int ground)
+    {
+        Point c = Cursor.Position;
+        double md = Math.Sqrt((c.X - lastCur.X) * (double)(c.X - lastCur.X) + (c.Y - lastCur.Y) * (double)(c.Y - lastCur.Y)); lastCur = c;
+        wheelBoost = Math.Min(30, wheelBoost * 0.96 + Math.Min(md, 80) * 0.08);
+        double tx = wand.Center.X - W / 2.0;
+        py = ground;
+        if (!inWheel)
+        {
+            double dx = tx - x;
+            if (Math.Abs(dx) > 3) { x += Math.Sign(dx) * Math.Min(Math.Abs(dx), 3.2); dir = dx > 0 ? 1 : -1; state = 0; }
+            else { x = tx; inWheel = true; dir = 1; Say("吱！進來囉～", 35); }
+            wand.Speed = 3f;
+        }
+        else
+        {
+            state = 0; dir = 1;
+            wand.Speed = 6f + (float)wheelBoost;
+            if (bubbleTicks == 0 && rnd.Next(110) == 0)
+            {
+                string[] says = { "吱吱！衝衝衝～", "滾輪轉起來了！", "跑好快～", "吱！再快一點！" };
+                Say(says[rnd.Next(says.Length)], 40);
+            }
+        }
+        wand.Follow();
+        Location = new Point((int)x, (int)py);
+    }
+
     // 跟著滑鼠的玩具（不會擋到滑鼠點擊）：逗貓棒、球、草球、魚玩偶、滾輪
     class WandForm : Form
     {
         const int S = 140;
         public string Kind = "wand";
+        public bool Parked = false; public float Speed = 4f; public Point Center { get; set; }   // 滾輪停在地上時用
         float spin = 0; int lastX = 0;
         public WandForm()
         {
@@ -269,7 +312,7 @@ public class LeyanCatPet : Form
         {
             int dx = c.X - lastX; lastX = c.X;
             if (Math.Abs(dx) > 200) dx = 0;
-            Location = new Point(c.X - S / 2, c.Y - S / 2);
+            Location = Parked ? new Point(Center.X - S / 2, Center.Y - S / 2) : new Point(c.X - S / 2, c.Y - S / 2);
             using (Bitmap bmp = new Bitmap(S, S, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
             {
                 using (Graphics g = Graphics.FromImage(bmp))
@@ -293,9 +336,9 @@ public class LeyanCatPet : Form
                     else if (Kind == "wheel")
                     {
                         Bitmap stand = Img("wheel_stand"), wh = Img("wheel_spin");
-                        spin += 4f + Math.Abs(dx) * 1.5f;
-                        const float k = 0.62f;
-                        GraphicsState st = g.Save(); g.TranslateTransform(m, m + 6); g.ScaleTransform(k, k);
+                        spin += Parked ? Speed : 4f + Math.Abs(dx) * 1.5f;
+                        float k = Parked ? 1.25f : 0.62f;   // 停在地上時放大，小倉鼠才跑得進去
+                        GraphicsState st = g.Save(); g.TranslateTransform(m, Parked ? m : m + 6); g.ScaleTransform(k, k);
                         if (stand != null) g.DrawImage(stand, -51, -51, 102, 104);
                         if (wh != null) { g.RotateTransform(spin); g.DrawImage(wh, -51, -51, 102, 102); }
                         g.Restore(st);
@@ -444,6 +487,7 @@ public class LeyanCatPet : Form
         if (e.Button != MouseButtons.Left || !mouseDown) return;
         mouseDown = false;
         if (dragging) { dragging = false; falling = true; vy = 0; }
+        else if (mode == 2 && inWheel) { wheelBoost = Math.Min(30, wheelBoost + 10); Say("吱！再快一點！", 30); }
         else if (mode == 2) Say("抓到了！喵～", 35);
         else if (mode == 1) { }
         else if (state == 3) { idleSleep = false; SetState(1, 120); Say("喵？我醒了！", 40); }
@@ -596,7 +640,9 @@ public class LeyanCatPet : Form
     void DrawPet(Graphics g, bool asleep, bool walking, bool moving, float munch, bool blink)
     {
         Bitmap im = null;
-        if (moving) im = PetImg("_walk" + ((tick / (pet == 2 ? 3 : 2)) % 6));
+        int div = pet == 2 ? 3 : 2;
+        if (inWheel) div = wheelBoost > 12 ? 1 : 2;
+        if (moving) im = PetImg("_walk" + ((inWheel && wheelBoost > 22 ? tick * 2 : tick) / div % 6));
         if (im == null) { moving = false; im = PetImg(asleep ? "_sleep" : blink ? "_blink" : ""); }
         if (im == null) return;
         const float S = 100f;
