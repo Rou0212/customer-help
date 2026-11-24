@@ -222,21 +222,46 @@ const PETS={
 };
 const PET_ORDER=['cat','poodle','rabbit','bear','hamster'],PET_KEY='leyan-pet';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
-// Classify conversational intent, not answer content: full questions stand alone;
-// references and error fragments supplement; only genuinely unclear fragments need a choice.
+// Topic evidence only controls whether to ask about a possible change; it never generates answers.
 const rejectedCandidates=q=>/^(?:都不是|不是這個|都不對|不對(?:耶|喔)?|不是我要的|不是這個問題)[。！! ]*$/.test(q.trim());
-function roundRelation(q){
+const ROUND_TOPICS=[
+ ['card',/讀卡機|讀卡器|健保卡|醫師卡|機構卡|pin|puk/i],
+ ['login',/登入|登錄|使用者密碼|帳號密碼|帳密|改密碼|更改密碼/],
+ ['upload',/上傳|夾帶檔案|夾帶附件/],
+ ['claim',/申報|抽審|申覆|補報|爭議審議/],
+ ['calendar',/日曆|行事曆|約診|預約/],
+ ['drug',/藥品|藥庫|藥單/],
+ ['billing',/掛號費|收據|押金|欠卡|退費|日結|現金帳/],
+ ['printer',/印表機|列表機|列印/],
+ ['network',/網路|vpn|連線/],
+ ['emr',/電子病歷|電子簽章|同意書|簽名/],
+ ['computer',/電腦|停電|主機|關機/]
+];
+const roundTopics=q=>ROUND_TOPICS.filter(([,re])=>re.test(norm(q))).map(([id])=>id);
+function roundRelation(previous,q){
  const n=norm(q);
- if(/^(?:補充|另外補充|還有|而且|就是|這個|它|我是|我們是|同一個|剛才|上一題)/.test(n)||/^(?:那)?(?:要怎麼做|怎麼處理|怎麼操作|怎麼辦|有沒有圖片|有圖片嗎|可以給我圖嗎|再說明一次|請再說一次|還是不行|一樣不行)$/.test(n))return 'append';
- if(/^(?:那|這)(?:個|一個|個設定|邊|裡)/.test(n))return 'unclear';
- const named=prepared.some(p=>p.toks.some(t=>{const core=topicCore(t);return core.length>=2&&n.includes(core)}))||faqPool.some(p=>p.toks.some(t=>{const core=topicCore(t);return core.length>=2&&n.includes(core)}));
- const question=/怎麼|如何|怎樣|哪裡|在哪|為什麼|請問|我要|我想|想要|能否|可不可以|要怎|多少|什麼/.test(n);
- const action=/不能|無法|讀不到|讀取不到|看不到|找不到|不見|沒反應|忘記|夾帶|修改|更改|改密碼|新增|設定|失敗|異常|打不開|連不上|上傳|申報|匯出|下載|列印|停電|鎖住/.test(n);
- if(n.length>=5&&(question||(named&&action)))return 'new';
- if(/^(?:出現|顯示|錯誤|代碼|無法|不能|沒有|沒反應|讀不到|還是|在)|^[a-z]?\d{4,}[a-z]?$/i.test(n))return 'append';
- return 'unclear';
+ // A fragment never establishes a new subject by itself, even after the debounce has finished.
+ if(n.length<5||/^(?:補充|另外補充|還有|而且|就是|這個|它|我是|我們是|同一個|剛才|上一題|出現|顯示|錯誤|代碼)/.test(n)||/^[a-z]?\d{4,}[a-z]?$/i.test(n))return 'append';
+ const before=roundTopics(previous),after=roundTopics(q);
+ if(!before.length||!after.length||after.some(t=>before.includes(t)))return 'append';
+ const compatible=[['upload','claim'],['upload','network'],['upload','emr'],['card','computer'],['network','computer'],['billing','claim']];
+ if(compatible.some(pair=>pair.some(t=>before.includes(t))&&pair.some(t=>after.includes(t))))return 'append';
+ if(before.includes('card')&&after.includes('login')&&/pin|puk/i.test(previous)&&!/登入|登錄|使用者|帳號/i.test(q))return 'append';
+ // Only an independent, named and actionable subject with disjoint evidence asks once.
+ return /怎麼|如何|怎樣|哪裡|在哪|為什麼|請問|我要|我想|要怎|不能|無法|讀不到|看不到|找不到|不見|沒反應|忘記|夾帶|修改|更改|改.{0,6}密碼|新增|設定|失敗|異常|打不開|連不上|上傳|匯出|下載|列印|停電|鎖住/.test(n)?'unclear':'append';
 }
-// A round stays local to this widget; only approved routing consumes the assembled text.
+function correctedRound(text,rejected,replacement){
+ if(text.includes(rejected)&&!/^(?:這個|那個|這題|上一個)$/.test(rejected))return text.split(rejected).join(replacement);
+ const target=roundTopics(replacement);
+ const kept=text.split('\n').filter(line=>{
+  const topics=roundTopics(line);
+  return !topics.length||topics.some(t=>target.includes(t));
+ });
+ // Preserve diagnostic details from a rejected topic instead of carrying its subject forward.
+ const codes=text.match(/\b[a-z]?\d{4,}[a-z]?\b/ig)||[];
+ return [...new Set([replacement,...kept,...codes.filter(code=>!kept.join(' ').includes(code)&&!replacement.includes(code)).map(code=>'錯誤碼'+code)])].filter(Boolean).join('\n');
+}
+// Debounce batches end after 5s; the question round persists until an explicit reset/new decision.
 function createQuestionRound({run,choose,pending,restart=()=>{},clock={now:()=>Date.now(),set:(f,n)=>setTimeout(f,n),clear:t=>clearTimeout(t)}}){
  let text='',first=null,timer=null,held='';
  const cancel=()=>{if(timer!==null)clock.clear(timer);timer=null};
@@ -244,14 +269,17 @@ function createQuestionRound({run,choose,pending,restart=()=>{},clock={now:()=>D
  const flush=()=>{if(first===null||held)return;cancel();first=null;if(text)run(text)};
  function submit(q,mode){
   q=q.trim();if(!q)return;
-  if(rejectedCandidates(q)){reset();run(q);return}
-  const correction=q.match(/^(?:不對[，, ]*)?不是[\s\S]+?(?:而是|是|改成)[，, ]*([\s\S]+)$/);
-  const relation=roundRelation(q),repeat=norm(q)===norm(text)||held&&norm(q)===norm(held);
-  if(mode==='new'||correction||(!mode&&!repeat&&relation==='new')){
-   const hadContext=!!(text||held);reset();if(hadContext)restart();q=correction?correction[1]:q;
+  if(rejectedCandidates(q)){cancel();first=null;held='';run(q);return}
+  const correction=q.match(/^(?:不對[，, ]*)?不是([\s\S]+?)(?:而是|是|改成)[，, ]*([\s\S]+)$/);
+  const repeat=norm(q)===norm(text)||held&&norm(q)===norm(held);
+  if(mode==='new'){
+   const hadContext=!!(text||held);reset();if(hadContext)restart();text=q;
+  }else if(correction){
+   cancel();first=null;held='';text=correctedRound(text,correction[1].replace(/[，, ]+$/,''),correction[2]);
   }else if(held&&!mode){if(!repeat)held+='\n'+q;choose();return}
-  else if(text&&!mode&&!repeat&&relation==='unclear'&&first===null){cancel();held=q;choose();return}
-  held='';if(!repeat||mode==='new'||correction)text=text?text+'\n'+q:q;
+  else if(text&&!mode&&!repeat&&roundRelation(text,q)==='unclear'){
+   cancel();held=q;choose();return;
+  }else if(!repeat)text=text?text+'\n'+q:q;
   if(first===null)first=clock.now();
   cancel();pending();timer=clock.set(flush,Math.max(0,Math.min(5000,60000-(clock.now()-first))));
  }
@@ -535,7 +563,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{
   if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();roundDecision=null;if(action==='new'){roundEpoch++;accountClinicPending=false;lastQuestion=''}round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
-  const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q,'new')});
+  const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){const city=clinicCity,epoch=roundEpoch;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
