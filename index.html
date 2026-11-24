@@ -161,12 +161,13 @@ html,body{background:#F7F9FC}
 @keyframes tab-fold{from{transform:scale(0)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.tabs .tab[aria-selected=true]:after{animation:none}}
 
-/* 大標題底下會流動的波浪底線，像用筆畫上去的註記 */
-.top h1{position:relative;width:fit-content;padding-bottom:6px}
-.top h1:after{content:"";position:absolute;left:2px;right:2px;bottom:-4px;height:10px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2010%22%3E%3Cpath%20d%3D%22M0%205%20Q6%200%2012%205%20T24%205%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") repeat-x 0 50%/24px 10px;opacity:.85;animation:h1-wave 1.4s linear infinite,h1-draw .9s ease-out both;pointer-events:none}
-@keyframes h1-wave{to{background-position-x:24px}}
+.top h1{position:relative;width:fit-content;padding-bottom:12px}
+/* 標題下方：像手寫筆記一樣，潦草地畫兩筆底線強調（載入時畫一次就停） */
+.top h1:before,.top h1:after{content:"";position:absolute;height:8px;pointer-events:none;opacity:.85;animation:h1-draw .55s cubic-bezier(.3,.1,.3,1) both}
+.top h1:before{left:0;right:2px;bottom:5px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%208%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M2%204%20C60%207%20130%201%20198%204%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") no-repeat 0 0/100% 100%;animation-delay:.15s}
+.top h1:after{left:8px;right:10px;bottom:-2px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%208%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M2%204%20C70%206%20140%202%20198%205%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") no-repeat 0 0/100% 100%;animation-delay:.6s}
 @keyframes h1-draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
-@media(prefers-reduced-motion:reduce){.top h1:after{animation:none}}
+@media(prefers-reduced-motion:reduce){.top h1:before,.top h1:after{animation:none}}
 
 /* 常見問題分類預設收合：點有螢光筆的標題才展開 */
 .faq-type.fold{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:box-shadow .2s ease,border-color .2s ease}
