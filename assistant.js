@@ -283,7 +283,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  '<div class="lc-announcer lc-sr" role="status" aria-live="polite" aria-atomic="true"></div><div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
  '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="輸入問題或文件代碼…">'+
- '<button type="button" class="lc-pic" aria-label="在本機辨識已遮蔽個資的錯誤畫面"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg></button><input type="file" accept="image/*" class="lc-file" hidden>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
+ '<label class="lc-pic" title="選擇圖片辨識"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg><input type="file" accept="image/*" class="lc-file" aria-label="在本機辨識已遮蔽個資的錯誤畫面"></label>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
  const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');let lastQuestion='';const policyHit=()=>typeof matchNhiProcedureCode==='function'?matchNhiProcedureCode(lastQuestion):null;const policyPage=d=>{const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();return hit&&hit.status==='found'?hit.pages[0]:1};
  function say(html,who){const el=document.createElement('div');el.className='lc-msg lc-'+(who||'bot');el.innerHTML=html;log.appendChild(el);log.scrollTop=log.scrollHeight;return el}
@@ -575,7 +575,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   wait.querySelector('button').onclick=()=>{const q=wait.querySelector('textarea').value.trim();if(epoch!==roundEpoch||city!==clinicCity)return;if(q)ask(q);else wait.querySelector('textarea').focus()};
   log.scrollTop=log.scrollHeight}
 
- const fileIn=$('.lc-file');$('.lc-pic').onclick=()=>fileIn.click();fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
+ // Use the native file control directly, including in Edge app windows.
+ const fileIn=$('.lc-file');fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
  root.addEventListener('paste',e=>{const it=[...(e.clipboardData||{}).items||[]].find(x=>x.type&&x.type.startsWith('image/'));if(it){e.preventDefault();look(it.getAsFile())}});
  panel.addEventListener('dragover',e=>{e.preventDefault();panel.classList.add('lc-drop')});panel.addEventListener('dragleave',()=>panel.classList.remove('lc-drop'));
  panel.addEventListener('drop',e=>{e.preventDefault();panel.classList.remove('lc-drop');const f=[...e.dataTransfer.files].find(x=>x.type.startsWith('image/'));if(f)look(f)});
