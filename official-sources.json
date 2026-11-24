@@ -70,5 +70,43 @@
         "url": "files/nhi-south-notes.pdf"
       }
     ]
+  },
+  {
+    "id": "north",
+    "title": "北區免審指標重點（樂衍整理版）",
+    "scope": "北區牙醫免審指標整理教材",
+    "edition": "2026-11-24 樂衍整理版；引用115年2月費用年月起版本",
+    "source_page": "https://www.nhi.gov.tw/ch/cp-7591-be14b-3396-1.html",
+    "checked": "2026-11-24",
+    "note": "樂衍整理版，非官方原文；請核對適用期間、官方完整條文與當期通知，不據摘要判定免審或申報資格。",
+    "files": [
+      {
+        "id": "nhi-north-exemption-notes",
+        "title": "北區免審指標重點（樂衍整理版）",
+        "category": "各區管控指標",
+        "region": "北區免審指標",
+        "description": "北區院所詢問免審指標時參考的14頁原始整理教材。",
+        "keywords": "北區 北區免審 免審指標 快速通關 桃園 新竹 苗栗 28.74% 91022C P3601C 91090C 91089C P7302C",
+        "edition": "2026-11-24 樂衍整理版；引用115年2月費用年月起版本",
+        "status": "使用者核可提供原PDF，不作資格判定",
+        "filename": "健保作業_北區免審指標重點_樂衍整理版_20261124.pdf",
+        "kind": "樂衍整理版",
+        "provenance": "user-provided-compilation",
+        "pages": 14,
+        "bytes": 456633,
+        "sha256": "59a3902411a0a24fe789b15907e1eb88dc80e9d7728ba9a7dfcf81f9c15a2ffb",
+        "url": "files/nhi-north-exemption-notes.pdf",
+        "steps": [
+          "確認院所分區及費用年月",
+          "閱讀整理版並核對官方原文及全部註記"
+        ],
+        "fullSteps": [],
+        "note": "樂衍整理版，非官方原文；請核對適用期間、官方完整條文與當期通知，不據摘要判定免審或申報資格。",
+        "source_page": "https://www.nhi.gov.tw/ch/cp-7591-be14b-3396-1.html",
+        "official_pdf": "https://www.nhi.gov.tw/ch/dl-94324-fe914dcd1af94956ac4d92f1f9e8b7ef-1.pdf",
+        "source_attachment": "https://github.com/user-attachments/files/35321448/_20261124.2.pdf",
+        "checked": "2026-11-24"
+      }
+    ]
   }
 ]

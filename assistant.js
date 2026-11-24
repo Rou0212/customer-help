@@ -23,6 +23,11 @@ function routeQuestion(q){const n=norm(q);
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  const routes=[
+ [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
+ [/(?:轉診單|轉診院所|建議轉診).*(?:查不到|找不到|沒看到|沒有院所)/,['referral-clinic-not-found'],[]],
+ [/(?:(?:中華電信|電信|網路).*(?:維修|故障|不通|異常|斷).*(?:掛號)|(?:掛號).*(?:電信|網路).*(?:維修|故障|不通|異常|斷))/,['telecom-outage-registration'],[]],
+ [/(?:(?:換|更換|變更).*(?:身分證|身份證|證號).*(?:補卡|欠卡)|(?:補卡|欠卡).*(?:換|更換|變更).*(?:身分證|身份證|證號))/,['id-change-refill-card'],[]],
+ [/(?:(?:姓名|名字|特殊字|生僻字|罕用字).*(?:問號|打不出|無法打)|(?:問號).*(?:姓名|名字))/,['patient-name-question-mark'],[]],
  [/(?:(?:他院|外院|別家|其他院所|其他診所).*(?:處置|申報|警告|警示|黃框)|(?:處置|警告|警示|黃框).*(?:他院|外院|別家|其他院所|其他診所))/,['other-clinic-procedure-warning'],[]],
  [/列表機|印表機.*連不上/,['printer'],[]],
  [/讀取.*ic醫令.*沒有.*就醫紀錄/i,['ic-vs-cloud'],[]],
@@ -87,7 +92,7 @@ function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='t
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
  if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
- const required={'other-clinic-procedure-warning':/(?:他院|外院|別家|其他院所|其他診所)/,'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
+ const required={'reasonable-volume-adjustment':/合理量|合理門診點數/,'referral-clinic-not-found':/轉診/,'telecom-outage-registration':/中華電信|電信|網路/,'id-change-refill-card':/身分證|身份證|證號/,'patient-name-question-mark':/姓名|名字|特殊字|生僻字|罕用字/,'other-clinic-procedure-warning':/(?:他院|外院|別家|其他院所|其他診所)/,'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
  if(required[p.f.id]&&!required[p.f.id].test(n))return {f:p.f,score:0};
  if(p.f.id==='progress-1-7'&&/申報|補報|抽審|上傳|簽章/.test(n)&&!/樂晴|掛號|寫卡/.test(n))return {f:p.f,score:0};
  if(p.f.id==='supplement-review-upload'&&!/抽審|送審/.test(n))return {f:p.f,score:0};
@@ -279,7 +284,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  function choices(faqs,docs){const fs=faqs.slice(0,2).map(x=>faqChoice(x.f)),ds=docs.slice(0,2).map(x=>docChoice(x.d));return fs.concat(ds).join('')}
  const indicatorRegions=[
   {name:'臺北',cities:['臺北市','新北市','基隆市','宜蘭縣','金門縣','連江縣']},
-  {name:'北區',cities:['桃園市','新竹市','新竹縣','苗栗縣']},
+  {name:'北區',cities:['桃園市','新竹市','新竹縣','苗栗縣'],doc:'nhi-north-exemption-notes'},
   {name:'中區',cities:['臺中市','彰化縣','南投縣'],doc:'nhi-central-notes'},
   {name:'南區',cities:['雲林縣','嘉義市','嘉義縣','臺南市'],doc:'nhi-south-notes'},
   {name:'高屏',cities:['高雄市','屏東縣','澎湖縣'],doc:'nhi-kaoping-notes'},
@@ -296,7 +301,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const n=norm(q);
   if(/處置|支付標準|給付|醫令/.test(n) && !/指標|合理量|合理門診點數/.test(n))return false;
   if(/(?:申報|抽審|送審|輔導積分)(?:的|相關)?(?:規範|規則|規定|須知|注意事項|原則|標準)|分區(?:申報|抽審)|輔導積分/.test(n))return true;
-  return /指標|管控|合理量|合理門診點數/.test(n);
+  return /指標|管控|合理量|合理門診點數|免審|快速通關/.test(n);
  };
  const cityKey='leyan-clinic-city';
  const cityOptions=indicatorRegions.flatMap(region=>region.cities);
@@ -367,6 +372,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   if(!doc)return;
   const pageLabel=page?'（根管未完成率：第 '+page+' 頁）':'';
   const url=doc.url+(page?'#page='+page:'');
+  if(doc.id==='nhi-north-exemption-notes'){say(esc(doc.note)+'<a class="lc-official" href="'+esc(doc.url)+'" target="_blank" rel="noopener noreferrer">開啟 '+esc(doc.title)+' PDF ↗</a><a class="lc-official" href="'+esc(doc.url)+'" download="'+esc(doc.filename)+'">下載原 PDF（14頁）</a><a class="lc-official" href="'+esc(doc.official_pdf)+'" target="_blank" rel="noopener noreferrer">引用的官方會議原文 ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署北區公告 ↗</a>');return}
   say('這邊提供'+label+'的申報規範給您參考（'+esc(doc.kind)+'，非官方原文）。請核對文件適用期間；實際規定以官方公告為準。<a class="lc-official" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(doc.title)+pageLabel+' PDF ↗</a><a class="lc-official" href="'+esc(doc.source_page)+'" target="_blank" rel="noopener noreferrer">健保署公告 ↗</a><small>看完如果還有問題，可輸入「轉人工」。</small>');
  }
  // 新特約只列核可主題；分區文件須已確認實際含新特約段落。
@@ -386,7 +392,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let accountClinicPending=false;
  function chooseAccountClinic(){accountClinicPending=true;say('請問是牙科院所還是非牙科？<button type="button" class="lc-choice" data-account-clinic="dental">牙科院所</button><button type="button" class="lc-choice" data-account-clinic="other">非牙科院所</button>');}
  function showAccountClinic(kind){accountClinicPending=false;const f=FQ.find(x=>x.id===(kind==='dental'?'dental-daily-cash':'report-daily-receipts'));if(f)say(faqHtml(f));}
- function query(q){lastQuestion=q;const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function query(q){lastQuestion=q;const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!route&&!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say(('嗯…'+pet.name+'還不太確定你遇到的是哪個問題。請將功能、操作步驟與錯誤代碼一起輸入，我再幫你找找看！')+supportHtml(pet.name));return}
