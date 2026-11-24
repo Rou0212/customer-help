@@ -381,11 +381,11 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let roundEpoch=0;
  function invalidateChoices(){for(const b of log.querySelectorAll('button'))b.disabled=true;for(const a of log.querySelectorAll('a')){a.removeAttribute('href');a.setAttribute('aria-disabled','true')}}
  const roundBar=document.createElement('div');roundBar.className='lc-round-bar';
- roundBar.innerHTML='<small role="status" aria-live="polite">可分段補充問題；最後送出後 5 秒查詢，連續輸入最多等 60 秒。</small><button type="button" class="lc-choice" data-round="flush">立即查詢</button><button type="button" class="lc-choice" data-round="reset">新問題</button>';
+ roundBar.innerHTML='<small role="status" aria-live="polite"></small><button type="button" class="lc-choice" data-round="flush">立即查詢</button><button type="button" class="lc-choice" data-round="reset">新問題</button>';
  $('.lc-form').before(roundBar);
  const roundStatus=roundBar.querySelector('small');
- const round=createQuestionRound({run:q=>{roundStatus.textContent='可繼續補充本題，或按「新問題」。';invalidateChoices();query(q)},pending:()=>{roundStatus.textContent='正在合併本題，最後送出後 5 秒查詢（最多 60 秒）；也可立即查詢。'},choose:()=>{roundStatus.textContent='請先選擇這段文字的用途。';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
- function resetRound(){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundStatus.textContent='已開始新問題，請輸入問題（請勿提供個資）。'}
+ const round=createQuestionRound({run:q=>{roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundStatus.textContent='請先選擇這段文字的用途。';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
+ function resetRound(){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundStatus.textContent=''}
  function ask(q){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
   roundEpoch++;say(esc(q),'user');input.value='';
   if(humanRequest(q)){resetRound();query(q);return}
