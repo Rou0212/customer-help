@@ -6,14 +6,15 @@ const norm=s=>String(s).toLowerCase().replace(/[\s，。？！、,.?!:：;；「
 // 一般看帳查帳先確認院所；特定押金、帳號等主題不走日結分流。
 function isAccountLookup(q){const n=norm(q);if(/押金|欠卡|退費|預付|儲值|點數|補報|申報|抽審|收據|帳號|密碼|帳密/.test(n))return false;return /(?:當天|當日|今天|今日|每天|每日).{0,8}帳|對帳|日結|下診.{0,8}帳|日報表.{0,3}實收|(?:看|查)(?:到|詢)?(?:一下)?(?:現金)?帳|帳.{0,8}(?:看|查)|帳(?:務|本)?(?:在哪|在那|哪邊|哪裡|那邊|那裡)|^現金帳$/.test(n);}
 // 上傳失敗不等於擷取不到照片；只有明確情境才直接提出該分支候選。
-function imageUploadRoute(q){const n=norm(q);if(/ai|pano|finding|抽審|申覆|夾帶/.test(n))return null;
- if(!/(?:x光|醫療影像|每日影像|每日照片|影像)/.test(n)||!/上傳|擷取|傳輸|傳不上|傳不出/.test(n))return null;
+function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
+ if(pano&&/finding|病歷.*(?:帶入|帶出)/.test(n))return {type:'topics',faqs:['batch-50'],docs:['nhi-image-upload']};
+ if(!pano&&(/ai|finding|抽審|申覆|夾帶/.test(n)||!/(?:x光|醫療影像|每日影像|每日照片|影像)/.test(n)||!/上傳|擷取|傳輸|傳不上|傳不出/.test(n)))return null;
  const missing=/沒有照片|沒照片|無照片|照片.*(?:找不到|擷取不到|擷取不出|抓不到)|(?:擷取|抓|找)不到.*(?:照片|影像)|擷取不到照片/.test(n);
  const transmission=/有照片|已(?:有|擷取|抓到)|擷取(?:成功|正常)|傳輸失敗|傳輸錯誤/.test(n.replace(/沒有照片/g,''));
  if(missing&&transmission)return {type:'image-upload'};
  if(missing)return {type:'topics',faqs:['image-no-photo'],docs:['nhi-image-upload']};
  if(transmission)return {type:'topics',faqs:['clear-eii'],docs:['nhi-image-upload']};
- if(/失敗|傳不上|傳不出|不能|無法|不成功/.test(n))return {type:'image-upload'};
+ if(pano||/失敗|傳不上|傳不出|不能|無法|不成功/.test(n))return {type:'image-upload'};
  return null;
 }
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
