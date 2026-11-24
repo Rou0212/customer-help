@@ -15,3 +15,5 @@ Verification: run `for f in tests/*.cjs; do node "$f" || exit 1; done`. `tests/q
 - Header 新問題 resets local state, cancels pending queries, invalidates old controls, clears the draft, and inserts a muted divider without deleting history. Choosing 問新問題 in a disambiguation also inserts a divider before its new query runs.
 - The status / 立即查詢 row is visible only while a debounce batch is pending. It is hidden initially, after a query, during topic disambiguation, and on reset / human handoff / city switch.
 - Check both index.html floating widget (480px desktop) and cat.html at desktop and 390px; verify reset in header, no blank toolbar, pending-only immediate action, retained history with disabled old candidates, and no horizontal overflow.
+
+- Explicit 問新問題 consumes the held text, clears the old round and runs once immediately; repeated resolve / flush calls with no pending batch are no-ops. Quick prompts supply an explicit new-round intent instead of entering topic disambiguation, while retaining the 5-second window for typed supplements.

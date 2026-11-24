@@ -227,7 +227,7 @@ function createQuestionRound({run,choose,pending,clock={now:()=>Date.now(),set:(
  let text='',first=null,timer=null,held='';
  const cancel=()=>{if(timer!==null)clock.clear(timer);timer=null};
  const reset=()=>{cancel();text='';first=null;held=''};
- const flush=()=>{cancel();if(held)return;first=null;if(text)run(text)};
+ const flush=()=>{if(first===null||held)return;cancel();first=null;if(text)run(text)};
  function submit(q,mode){
   q=q.trim();if(!q)return;
   if(held&&!mode){held+='\n'+q;choose();return}
@@ -240,7 +240,7 @@ function createQuestionRound({run,choose,pending,clock={now:()=>Date.now(),set:(
   if(first===null)first=clock.now();
   cancel();pending();timer=clock.set(flush,Math.max(0,Math.min(5000,60000-(clock.now()-first))));
  }
- return {submit,flush,reset,resolve:mode=>{const q=held;held='';if(q)submit(q,mode)},get text(){return text}};
+ return {submit,flush,reset,resolve:mode=>{const q=held;held='';if(q){submit(q,mode);if(mode==='new')flush()}},get text(){return text}};
 }
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -387,7 +387,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const round=createQuestionRound({run:q=>{roundBar.hidden=true;roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundBar.hidden=false;roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundBar.hidden=true;roundStatus.textContent='';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
  function newDivider(){const el=say('已開始新問題，前面的內容不會再一起搜尋。','divider');el.setAttribute('role','status')}
  function resetRound(showDivider=false){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundBar.hidden=true;roundStatus.textContent='';if(showDivider){input.value='';newDivider()}}
- function ask(q){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
+ function ask(q,mode){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
+  if(mode==='new')resetRound(!!round.text);
   roundEpoch++;say(esc(q),'user');input.value='';
   if(humanRequest(q)){resetRound();query(q);return}
   if(/^(?:新問題|重新開始|重置)$/.test(q)){resetRound(true);return}
@@ -395,7 +396,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const fixed=accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(norm(q));
   invalidateChoices();
   if(fixed){round.reset();roundBar.hidden=true;query(q);return}
-  accountClinicPending=false;round.submit(q);
+  accountClinicPending=false;round.submit(q,mode);
  }
  roundBar.onclick=e=>{if(e.target.closest('[data-round="flush"]'))round.flush()};
  $('.lc-new').onclick=()=>{resetRound(true);input.focus()};
@@ -518,7 +519,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{
   if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();if(action==='new'){roundEpoch++;accountClinicPending=false;lastQuestion='';newDivider()}round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
-  const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
+  const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q,'new')});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
  async function look(file){const city=clinicCity,epoch=roundEpoch;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
