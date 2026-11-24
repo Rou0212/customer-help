@@ -4,7 +4,7 @@
 
 - Text, quick prompts, confirmed local OCR text and speech use `ask`.
 - `createQuestionRound` keeps local round text, debounces 5 seconds from last submission, and flushes at 60 seconds from the first submission in a batch. Immediate query flushes that batch.
-- Dependent prefixes / error codes supplement the round; explicit `不是…是…` replaces the direction. Otherwise visitors choose supplement or new question before ranking. New question and city changes clear timers and fixed clarifications; human requests bypass timers and clear state immediately.
+- Complete natural questions with a question intent or named topic plus an action start a new round automatically. Dependent prefixes, short follow-up requests and error codes supplement the round; identical resubmissions never concatenate or trigger a choice. Explicit `不是…是…` replaces the direction; `不是這個` clears it and requests the actual topic. Only unclear fragments after a completed query ask supplement or new question; retain one decision card while collecting further fragments. New question and city changes clear timers and fixed clarifications; human requests bypass timers and clear state immediately.
 - Before reranking, disable prior candidate controls and links. Approved FAQ/manual answers still require candidate confirmation; account dental/non-dental remains an explicit confirmation path.
 - OCR results and their buttons carry a round epoch and city check so stale images cannot submit into a later round.
 
@@ -17,3 +17,7 @@ Verification: run `for f in tests/*.cjs; do node "$f" || exit 1; done`. `tests/q
 - Check both index.html floating widget (480px desktop) and cat.html at desktop and 390px; verify reset in header, no blank toolbar, pending-only immediate action, retained history with disabled old candidates, and no horizontal overflow.
 
 - Explicit 問新問題 consumes the held text, clears the old round and runs once immediately; repeated resolve / flush calls with no pending batch are no-ops. Quick prompts supply an explicit new-round intent instead of entering topic disambiguation, while retaining the 5-second window for typed supplements.
+
+## Natural typing acceptance
+
+Use the real deployed index.html floating widget and cat.html, type each input and wait at least 5 seconds without pressing immediate query: 讀卡機讀不到 → 怎麼改密碼 → 上傳無法夾帶檔案 → 補充錯誤E465. Each complete topic must replace the previous context without a round-choice prompt; the error must refine upload candidates. No answer is revealed before candidate selection. Then test 不是這個, same-input repeats after header reset, multiple complete topic switches, an unclear 那個設定 plus further fragments (one decision card only), explicit new and append choices, pending reset, human handoff and city cancellation. Record active/disabled choices, candidate outputs, pending visibility, version and screenshots; do not substitute quick prompts or internal round function calls for typing acceptance.

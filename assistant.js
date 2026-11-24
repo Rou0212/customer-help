@@ -12,7 +12,7 @@ function routeQuestion(q){const n=norm(q);
  if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
  if(!/樂易秀|牙周|上傳|健保|申報/.test(n)&&imageObject&&(exportAction||locationAsk))return {type:'clarify',message:'請問是哪一個系統的圖片（例如樂易秀），以及是匯出、下載還是上傳？確認系統與操作後才能提供對應位置。'};
 
- if(/^(?:都不是|不是這個|都不對)$/.test(n))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
+ if(rejectedCandidates(q))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
  if(/其他訊息|不是簡訊/.test(n)||(!/簡訊/.test(n)&&/不能發訊息|訊息.*(?:不能發|發不出)/.test(n)))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
  if(/帳密忘記|帳號.*(?:哪|忘)|查詢帳號密碼|帳號密碼忘/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};
  if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
@@ -222,25 +222,40 @@ const PETS={
 };
 const PET_ORDER=['cat','poodle','rabbit','bear','hamster'],PET_KEY='leyan-pet';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
+// Classify conversational intent, not answer content: full questions stand alone;
+// references and error fragments supplement; only genuinely unclear fragments need a choice.
+const rejectedCandidates=q=>/^(?:都不是|不是這個|都不對|不對(?:耶|喔)?|不是我要的|不是這個問題)[。！! ]*$/.test(q.trim());
+function roundRelation(q){
+ const n=norm(q);
+ if(/^(?:補充|另外補充|還有|而且|就是|這個|它|我是|我們是|同一個|剛才|上一題)/.test(n)||/^(?:那)?(?:要怎麼做|怎麼處理|怎麼操作|怎麼辦|有沒有圖片|有圖片嗎|可以給我圖嗎|再說明一次|請再說一次|還是不行|一樣不行)$/.test(n))return 'append';
+ if(/^(?:那|這)(?:個|一個|個設定|邊|裡)/.test(n))return 'unclear';
+ const named=prepared.some(p=>p.toks.some(t=>{const core=topicCore(t);return core.length>=2&&n.includes(core)}))||faqPool.some(p=>p.toks.some(t=>{const core=topicCore(t);return core.length>=2&&n.includes(core)}));
+ const question=/怎麼|如何|怎樣|哪裡|在哪|為什麼|請問|我要|我想|想要|能否|可不可以|要怎|多少|什麼/.test(n);
+ const action=/不能|無法|讀不到|讀取不到|看不到|找不到|不見|沒反應|忘記|夾帶|修改|更改|改密碼|新增|設定|失敗|異常|打不開|連不上|上傳|申報|匯出|下載|列印|停電|鎖住/.test(n);
+ if(n.length>=5&&(question||(named&&action)))return 'new';
+ if(/^(?:出現|顯示|錯誤|代碼|無法|不能|沒有|沒反應|讀不到|還是|在)|^[a-z]?\d{4,}[a-z]?$/i.test(n))return 'append';
+ return 'unclear';
+}
 // A round stays local to this widget; only approved routing consumes the assembled text.
-function createQuestionRound({run,choose,pending,clock={now:()=>Date.now(),set:(f,n)=>setTimeout(f,n),clear:t=>clearTimeout(t)}}){
+function createQuestionRound({run,choose,pending,restart=()=>{},clock={now:()=>Date.now(),set:(f,n)=>setTimeout(f,n),clear:t=>clearTimeout(t)}}){
  let text='',first=null,timer=null,held='';
  const cancel=()=>{if(timer!==null)clock.clear(timer);timer=null};
  const reset=()=>{cancel();text='';first=null;held=''};
  const flush=()=>{if(first===null||held)return;cancel();first=null;if(text)run(text)};
  function submit(q,mode){
   q=q.trim();if(!q)return;
-  if(held&&!mode){held+='\n'+q;choose();return}
+  if(rejectedCandidates(q)){reset();run(q);return}
   const correction=q.match(/^(?:不對[，, ]*)?不是[\s\S]+?(?:而是|是|改成)[，, ]*([\s\S]+)$/);
-  if(mode==='new'||correction){reset();q=correction?correction[1]:q}
-  else if(text&&!mode&&!/^(?:補充|另外補充|還有|而且|就是|這個|它|出現|顯示|錯誤|代碼|無法|不能|沒有|沒反應|在|我是|我們是)|^[a-z]?\d{4,}[a-z]?$/i.test(q)){
-   cancel();held=q;choose();return;
-  }
-  held='';text=text?text+'\n'+q:q;
+  const relation=roundRelation(q),repeat=norm(q)===norm(text)||held&&norm(q)===norm(held);
+  if(mode==='new'||correction||(!mode&&!repeat&&relation==='new')){
+   const hadContext=!!(text||held);reset();if(hadContext)restart();q=correction?correction[1]:q;
+  }else if(held&&!mode){if(!repeat)held+='\n'+q;choose();return}
+  else if(text&&!mode&&!repeat&&relation==='unclear'&&first===null){cancel();held=q;choose();return}
+  held='';if(!repeat||mode==='new'||correction)text=text?text+'\n'+q:q;
   if(first===null)first=clock.now();
   cancel();pending();timer=clock.set(flush,Math.max(0,Math.min(5000,60000-(clock.now()-first))));
  }
- return {submit,flush,reset,resolve:mode=>{const q=held;held='';if(q){submit(q,mode);if(mode==='new')flush()}},get text(){return text}};
+ return {submit,flush,reset,resolve:mode=>{const q=held;if(!q)return;held='';submit(q,mode);if(mode==='new')flush()},get text(){return text}};
 }
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -384,9 +399,10 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  roundBar.innerHTML='<small role="status" aria-live="polite"></small><button type="button" class="lc-choice" data-round="flush">立即查詢</button>';
  $('.lc-form').before(roundBar);
  const roundStatus=roundBar.querySelector('small');
- const round=createQuestionRound({run:q=>{roundBar.hidden=true;roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundBar.hidden=false;roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundBar.hidden=true;roundStatus.textContent='';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
+ let roundDecision=null;
+ const round=createQuestionRound({restart:()=>{roundDecision=null;newDivider()},run:q=>{roundDecision=null;roundBar.hidden=true;roundStatus.textContent='';invalidateChoices();query(q)},pending:()=>{roundDecision=null;roundBar.hidden=false;roundStatus.textContent='可繼續補充，5 秒後查詢'},choose:()=>{roundBar.hidden=true;roundStatus.textContent='';if(roundDecision){for(const b of roundDecision.querySelectorAll('button'))b.disabled=false;log.appendChild(roundDecision);log.scrollTop=log.scrollHeight;return}roundDecision=say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
  function newDivider(){const el=say('已開始新問題，前面的內容不會再一起搜尋。','divider');el.setAttribute('role','status')}
- function resetRound(showDivider=false){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundBar.hidden=true;roundStatus.textContent='';if(showDivider){input.value='';newDivider()}}
+ function resetRound(showDivider=false){roundDecision=null;round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundBar.hidden=true;roundStatus.textContent='';if(showDivider){input.value='';newDivider()}}
  function ask(q,mode){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
   if(mode==='new')resetRound(!!round.text);
   roundEpoch++;say(esc(q),'user');input.value='';
@@ -517,7 +533,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  if(swapBtn)swapBtn.addEventListener('click',()=>{const r=swapBtn.getBoundingClientRect();openMenu(r.left,r.bottom+4,false,true)});
  armIdle();
  root.addEventListener('click',e=>{
-  if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();if(action==='new'){roundEpoch++;accountClinicPending=false;lastQuestion='';newDivider()}round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
+  if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();roundDecision=null;if(action==='new'){roundEpoch++;accountClinicPending=false;lastQuestion=''}round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
   const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q,'new')});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};

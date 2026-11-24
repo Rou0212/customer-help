@@ -7,8 +7,8 @@ r.reset();r.submit('申報');for(let i=0;i<14;i++){tick(4000);r.submit('出現�
 // Explicit topic decisions must complete once, without re-entering ambiguity or leaving a delayed query.
 r.reset();out=[];choices=0;
 r.submit('讀卡機沒反應');r.flush();assert.deepEqual(out,['讀卡機沒反應']);
-r.submit('怎麼改密碼');assert.equal(choices,1);r.resolve('new');
-assert.deepEqual(out,['讀卡機沒反應','怎麼改密碼']);assert.equal(r.text,'怎麼改密碼');
+r.submit('那個設定');assert.equal(choices,1);r.resolve('new');
+assert.deepEqual(out,['讀卡機沒反應','那個設定']);assert.equal(r.text,'那個設定');
 r.resolve('new');r.flush();tick(60000);assert.equal(out.length,2,'new decision must run exactly once');assert.equal(choices,1);
 // A known quick-prompt intent starts a new round, but still allows segmented supplements.
 r.submit('上傳無法夾帶檔案','new');assert.equal(choices,1);tick(3000);r.submit('顯示錯誤5022');tick(5000);
