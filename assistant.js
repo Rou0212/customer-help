@@ -291,7 +291,11 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  root.classList.add('lc-root','lc-mode-'+mode);
  let petKey='cat';try{const s=localStorage.getItem(PET_KEY);if(PETS[s])petKey=s}catch{}
- let pet=PETS[petKey];root.dataset.pet=petKey;
+ // 桌面小動物打開問答視窗時會在網址帶 ?pet=，跟桌面那隻一樣
+ try{const u=new URLSearchParams(location.search).get('pet');if(PETS[u]){petKey=u;localStorage.setItem(PET_KEY,u)}}catch{}
+ // 問答視窗（cat.html）的標題是「樂衍＋夥伴名字」，桌面小動物靠標題知道網站上換成哪一隻
+ const setTitle=()=>{if(mode==='page')document.title='樂衍'+PETS[petKey].name};
+ let pet=PETS[petKey];root.dataset.pet=petKey;setTitle();
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟'+pet.name+'助手">'+pet.svg+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="'+pet.name+'助手"'+(mode==='fab'?' hidden':'')+'>'+
  '<div class="lc-head">'+(mode==='page'?pet.svg:'')+'<strong class="lc-title">'+pet.name+'</strong><div class="lc-head-actions"><button type="button" class="lc-new" data-round="reset">新問題</button><button type="button" class="lc-swap" aria-haspopup="menu" title="換一個夥伴陪你">🐾 換夥伴</button>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div></div>'+
@@ -558,7 +562,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{if(Date.now()-lpAt<800){e.stopPropagation();e.preventDefault()}},true);
  // 換夥伴：換掉畫面上的動物、標題與說話方式，並記住選擇
  function setPet(k){if(!PETS[k])return;endAct();root.querySelectorAll('.lc-zzz').forEach(z=>z.remove());
-  petKey=k;pet=PETS[k];root.dataset.pet=k;try{localStorage.setItem(PET_KEY,k)}catch{}
+  petKey=k;pet=PETS[k];root.dataset.pet=k;try{localStorage.setItem(PET_KEY,k)}catch{}setTitle();
   root.querySelectorAll('.lc-cat').forEach(el=>{el.insertAdjacentHTML('afterend',pet.svg);el.remove()});
   const t=root.querySelector('.lc-title');if(t)t.textContent=pet.name;
   panel.setAttribute('aria-label',pet.name+'助手');const f=root.querySelector('.lc-fab');if(f)f.setAttribute('aria-label','開啟'+pet.name+'助手');
