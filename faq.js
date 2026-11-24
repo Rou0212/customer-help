@@ -4,21 +4,21 @@
 const PROBLEM_TYPES=[
 {id:'hw',name:'硬體問題',hint:'讀卡機、健保卡、印表機、電腦、停電',color:'#C0392B',icon:'hw',groups:['card','pc'],cats:['設備排解']},
 {id:'nhi',name:'健保申報',hint:'申報、抽審、申覆、牙位更正',color:'#2F6FB0',icon:'nhi',groups:['nhi','taipei'],cats:['健保作業']},
-{id:'reg',name:'掛號・帳務',hint:'掛號、補卡、欠卡、退掛',color:'#8A5A00',icon:'reg',groups:['reg'],cats:[]},
+{id:'reg',name:'掛號・帳務',hint:'掛號、補卡、欠卡、退掛',color:'#C46A1A',icon:'reg',groups:['reg'],cats:[]},
 {id:'net',name:'網路・VPN・上傳',hint:'網路不通、VPN、影像與檢驗上傳',color:'#1F7A6E',icon:'net',groups:['vpn'],cats:['VPN 相關操作','上傳作業']},
 {id:'emr',name:'電子病歷・表單',hint:'簽章、牙周紀錄表、表單',color:'#6B4FA8',icon:'emr',groups:['emr'],cats:['電子病歷']},
-{id:'settings',name:'系統設定',hint:'醫師、藥品、費用與帳號設定',color:'#7B5682',icon:'reg',groups:['settings'],cats:[]},
+{id:'settings',name:'系統設定',hint:'醫師、藥品、費用與帳號設定',color:'#6E6A64',icon:'set',groups:['settings'],cats:[]},
 {id:'cal',name:'Google 日曆',hint:'醫師共用、手機看不到約診',color:'#3E7D2E',icon:'cal',groups:['cal'],cats:['Google 日曆']},
-{id:'aesthetic',name:'醫美相關報表',hint:'療程、消耗、業績、客群與預付金',color:'#A55173',icon:'reg',groups:['aesthetic'],cats:[]}];
+{id:'aesthetic',name:'醫美相關報表',hint:'療程、消耗、業績、客群與預付金',color:'#A55173',icon:'chart',groups:['aesthetic'],cats:[]}];
 const FAQ_GROUPS=[
 {id:'taipei',name:'台北區管控',color:'#2F6FB0'},
 {id:'card',name:'讀卡機與健保卡',color:'#C0392B'},
-{id:'reg',name:'掛號・補卡・帳務',color:'#8A5A00'},
+{id:'reg',name:'掛號・補卡・帳務',color:'#C46A1A'},
 {id:'nhi',name:'健保申報與病歷',color:'#2F6FB0'},
 {id:'vpn',name:'VPN 與上傳',color:'#1F7A6E'},
 {id:'emr',name:'電子病歷與表單',color:'#6B4FA8'},
 {id:'pc',name:'電腦與設備',color:'#4A5159'},
-{id:'settings',name:'系統設定',color:'#7B5682'},
+{id:'settings',name:'系統設定',color:'#6E6A64'},
 {id:'cal',name:'Google 行事曆',color:'#3E7D2E'},
 {id:'aesthetic',name:'醫美相關報表',color:'#A55173'}];
 const OFFICIAL_URLS={'hca-unlock':'https://hca.nat.gov.tw/CertAction/PinAUnlock'};

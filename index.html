@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=persistent-round-reject-20261124"><style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=warm-20261124"><style>
 :root{--ink:#15191E;--muted:#4A5159;--line:#DCE0E4;--panel:#F3F4F2;--blue:#15191E;--blue-dark:#000;--apricot:#15191E;--apricot-soft:#F3F4F2;--apricot-ink:#15191E;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:#fff}
 *{box-sizing:border-box}html{background:#fff}body{margin:0;line-height:1.6;background:#fff}button,input{font:inherit;color:inherit}button,a{touch-action:manipulation}button{cursor:pointer}a{color:var(--ink)}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}
 :focus-visible{outline:3px solid #1D4F91;outline-offset:3px}
@@ -139,8 +139,10 @@ html,body{background:#F7F9FC}
 .top{position:relative}
 .site-logo{position:absolute;top:24px;right:30px;width:150px;aspect-ratio:280/64;overflow:hidden;line-height:0;border-radius:6px}
 .site-logo img{display:block;width:100%;height:auto;margin-top:-25.7%}
-@media(max-width:640px){.site-logo{top:14px;right:14px;width:104px}}
+@media(max-width:640px){.site-logo{position:static;display:block;margin:-6px 0 8px auto;width:96px}}
 @media(max-width:360px){.site-logo{width:84px}}
+/* 手機：問題類型改成一欄，標題不會擠到換三行 */
+@media(max-width:480px){.types{grid-template-columns:minmax(0,1fr)}.type-btn{min-height:58px}}
 
 /* 兩個分頁用不同的淡色區分：常見問題＝淡藍、操作手冊＝淡粉紅 */
 #tab-faq{--tc:#2F64A8;--tb:#F1F6FF;--tbs:#E3EEFF;--tl:#BFD6F6}
@@ -161,12 +163,13 @@ html,body{background:#F7F9FC}
 @keyframes tab-fold{from{transform:scale(0)}to{transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){.tabs .tab[aria-selected=true]:after{animation:none}}
 
-/* 大標題底下會流動的波浪底線，像用筆畫上去的註記 */
-.top h1{position:relative;width:fit-content;padding-bottom:6px}
-.top h1:after{content:"";position:absolute;left:2px;right:2px;bottom:-4px;height:10px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2210%22%20viewBox%3D%220%200%2024%2010%22%3E%3Cpath%20d%3D%22M0%205%20Q6%200%2012%205%20T24%205%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%222.6%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") repeat-x 0 50%/24px 10px;opacity:.85;animation:h1-wave 1.4s linear infinite,h1-draw .9s ease-out both;pointer-events:none}
-@keyframes h1-wave{to{background-position-x:24px}}
+.top h1{position:relative;width:fit-content;padding-bottom:12px}
+/* 標題下方：像手寫筆記一樣，潦草地畫兩筆底線強調（載入時畫一次就停） */
+.top h1:before,.top h1:after{content:"";position:absolute;height:8px;pointer-events:none;opacity:.85;animation:h1-draw .55s cubic-bezier(.3,.1,.3,1) both}
+.top h1:before{left:0;right:2px;bottom:5px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%208%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M2%204%20C60%207%20130%201%20198%204%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") no-repeat 0 0/100% 100%;animation-delay:.15s}
+.top h1:after{left:8px;right:10px;bottom:-2px;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20200%208%22%20preserveAspectRatio%3D%22none%22%3E%3Cpath%20d%3D%22M2%204%20C70%206%20140%202%20198%205%22%20fill%3D%22none%22%20stroke%3D%22%235B8DEF%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%2F%3E%3C%2Fsvg%3E") no-repeat 0 0/100% 100%;animation-delay:.6s}
 @keyframes h1-draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
-@media(prefers-reduced-motion:reduce){.top h1:after{animation:none}}
+@media(prefers-reduced-motion:reduce){.top h1:before,.top h1:after{animation:none}}
 
 /* 常見問題分類預設收合：點有螢光筆的標題才展開 */
 .faq-type.fold{margin-top:10px;border:1px solid var(--line);border-radius:14px;background:#fff;transition:box-shadow .2s ease,border-color .2s ease}
@@ -210,8 +213,13 @@ html,body{background:#F7F9FC}
 .hand-circle{position:absolute;z-index:1;overflow:visible;pointer-events:none}
 .hand-circle path{fill:none;stroke:#E5393B;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.9}
 .hand-circle.draw path{animation:hand-draw .7s cubic-bezier(.45,.1,.3,1) both}
+.hand-line path{stroke-width:2.4}
+.hand-line.draw path{animation-duration:.4s;animation-timing-function:cubic-bezier(.3,.1,.3,1)}
 @keyframes hand-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.hand-circle.draw path{animation:none}}
+
+/* 分類已經有螢光筆標出顏色，拿掉前面的圓點，畫面比較乾淨 */
+.faq-toggle i,.faq-type>h3 i{display:none}
 </style></head><body>
 <div class="strip" aria-hidden="true"></div>
 <main class="page" id="main">
@@ -238,7 +246,7 @@ html,body{background:#F7F9FC}
 <div class="reader-tools"><div class="tool-group"><button type="button" class="tool" id="pdf-prev" disabled aria-label="上一頁">‹ 上一頁</button><form class="page-form" id="page-form"><label for="page-input">第</label><input id="page-input" inputmode="numeric" autocomplete="off" aria-label="頁碼" value="1" disabled><span id="page-total">/ – 頁</span></form><button type="button" class="tool" id="pdf-next" disabled aria-label="下一頁">下一頁 ›</button></div><div class="tool-group"><button type="button" class="tool" id="zoom-out" aria-label="縮小" disabled>－</button><span id="zoom-level" class="zoom-level">符合寬度</span><button type="button" class="tool" id="zoom-in" aria-label="放大" disabled>＋</button></div></div>
 <p id="reader-status" class="reader-status" role="status" aria-live="polite"></p>
 </div></div>
-<script src="manuals.js?v=cs-approved-20261123"></script><script src="functional-index.js?v=topic-audit-20261123"></script><script src="faq.js?v=hca-toys-20261123-final"></script><script src="training/nhi-code-pages.js?v=procedure-search-20261120"></script>
+<script src="manuals.js?v=cs-approved-20261123"></script><script src="functional-index.js?v=topic-audit-20261123"></script><script src="faq.js?v=decor-20261124"></script><script src="training/nhi-code-pages.js?v=procedure-search-20261120"></script>
 <script>
 const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const cats=['全部','健保作業','VPN 相關操作','上傳作業','電子病歷','設備排解','Google 日曆'];
@@ -281,7 +289,7 @@ const WARN={'nhi-appeal':'共通資料傳輸平台執行時，請勿同時取卡
 const WARN_ICON='<svg viewBox="0 0 40 40" fill="none" stroke="#15191E" stroke-width="2.6" stroke-linejoin="round" aria-hidden="true"><path d="M20 4 37 34H3z"/><path d="M20 15v9" stroke-linecap="round"/><circle cx="20" cy="29" r="1.7" fill="#15191E" stroke="none"/></svg>';
 const LINK_ICON='<svg viewBox="0 0 24 24" fill="none" stroke="#15191E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>';
 $('#chips').innerHTML=cats.map(c=>{const l=LINES[c],n=documents.filter(d=>!d.region&&!d.parent&&(c==='全部'||d.category===c)).length;return '<button type="button" class="line-btn" data-category="'+c+'" style="--c:'+(l?l.color:'#15191E')+'">'+esc(topicNames[c])+'<span class="n">'+n+' 份</span></button>'}).join('');
-const TICON={hw:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',nhi:'<path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M12 8v6M9 17h6"/>',reg:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>',net:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/>',emr:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 16l2 2 4-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>'};
+const TICON={hw:'<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',nhi:'<path d="M6 3h9l3 3v15H6z"/><path d="M9 11h6M12 8v6M9 17h6"/>',reg:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/>',net:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19" r="1"/>',emr:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 16l2 2 4-5"/>',cal:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',set:'<path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',chart:'<path d="M4 20h16"/><path d="M7 17v-5M12 17V7M17 17v-8"/><path d="M6 9l5-4 6 3"/>'};
 $('#types').innerHTML=PROBLEM_TYPES.map(t=>'<button type="button" class="type-btn" data-type="'+t.id+'" aria-pressed="false" style="--c:'+t.color+'"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+TICON[t.icon]+'</svg><b>'+esc(t.name)+'</b><small>'+esc(t.hint)+'</small></button>').join('');
 function regionalFiles(){const regs=documents.filter(d=>d.region);return '<details class="regional"><summary>各區管控指標</summary><div class="regional-body"><p class="regional-hint">依院所分區與適用期間選用，非額外申報步驟。</p>'+regs.map(d=>'<div class="region-row"><strong>'+esc(d.region.replace(/管控指標|指標/,''))+'</strong><button type="button" class="link-btn" data-read="'+d.id+'" aria-label="閱讀'+esc(d.title)+'">閱讀</button><span class="sep" aria-hidden="true">・</span><a class="link-btn" href="'+d.url+'" download="'+esc(d.filename)+'" aria-label="下載'+esc(d.title)+'">下載</a></div>').join('')+'<p class="source-line">資料來源：中央健康保險署 '+regs.map(d=>'<a href="'+esc(d.source_page)+'" target="_blank" rel="noopener noreferrer">'+esc(d.region.replace(/管控指標|指標/,''))+'</a>').join('｜')+'　<span class="source-tag">整理版</span> 分區申報注意事項整理版；實際規定以官方公告為準</p></div></details>'}
 function variantFiles(d){const vs=[d,...documents.filter(x=>x.parent===d.id)];return '<div class="variants"><p class="regional-hint">選擇診所使用的簽章方式：</p>'+vs.map(v=>'<div class="region-row variant-row" data-variant="'+v.id+'"><strong>'+esc(v.variantLabel)+'</strong><span class="vmeta">'+v.pages+' 頁</span><button type="button" class="link-btn" data-read="'+v.id+'" aria-label="閱讀'+esc(d.title+'（'+v.variantLabel+'）')+'">閱讀</button><span class="sep" aria-hidden="true">・</span><a class="link-btn" href="'+v.url+'" download="'+esc(v.filename)+'" aria-label="下載'+esc(d.title+'（'+v.variantLabel+'）')+'">下載</a></div>').join('')+'</div>'}
@@ -304,7 +312,7 @@ tab=userTab;if(q&&!forced){if(tab==='faq'&&!fq.length&&filtered.length)tab='docs
 $('#tab-faq .n').textContent=fq.length+' 則';$('#tab-docs .n').textContent=filtered.length+' 份';$('#tab-faq .n').classList.toggle('zero',!fq.length);$('#tab-docs .n').classList.toggle('zero',!filtered.length);
 document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));$('#panel-faq').hidden=tab!=='faq';$('#panel-docs').hidden=tab!=='docs';$('#faq').hidden=false;$('#empty').hidden=tab==='faq'?!!fq.length:!!filtered.length;let related=$('#related-category');if(!related){related=document.createElement('button');related.id='related-category';related.type='button';related.textContent='查看健保申報與審查手冊';related.onclick=()=>setCategory('健保作業');$('#empty').append(related)}related.hidden=!(ptype==='reg'&&tab==='docs'&&!filtered.length);$('#empty p').textContent=ptype==='reg'&&tab==='docs'&&!filtered.length?'掛號與帳務目前以常見問題提供指引，沒有專屬操作手冊。如要查申報作業，可查看健保申報與審查分類。':'找不到相關內容，試試其他情境、主題或錯誤代碼。'}
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab)};$('#faq-list').addEventListener('click',e=>{const tg=e.target.closest('.faq-toggle');if(tg){const id=tg.dataset.fold,box=tg.closest('.faq-type'),body=box.querySelector('.faq-type-body'),open=tg.getAttribute('aria-expanded')!=='true';open?openFaqTypes.add(id):openFaqTypes.delete(id);tg.setAttribute('aria-expanded',open);box.classList.toggle('open',open);body.hidden=!open;return}const m=e.target.closest('.faq-more');if(m){e.stopPropagation();setType(m.dataset.type)}},true);$('#types').onclick=e=>{const b=e.target.closest('[data-type]');if(b)setType(b.dataset.type===ptype?null:b.dataset.type)};$('#chips').onclick=e=>{const b=e.target.closest('[data-category]');if(b)setCategory(b.dataset.category===category&&category!=='全部'?'全部':b.dataset.category)};$('#query').oninput=()=>{forced=false;render()};$('form.search').onsubmit=e=>{e.preventDefault();render();$('#query').blur()};$('#reset').onclick=()=>{$('#query').value='';setCategory('全部');$('#query').focus()};
-const ph=()=>$('#query').placeholder=mobile.matches?'搜尋主題或錯誤碼，如醫師卡解鎖':'搜尋情境、主題或錯誤代碼，例如：醫師卡解鎖、抽審、4043';mobile.addEventListener('change',ph);ph();render();
+const ph=()=>$('#query').placeholder=mobile.matches?'搜尋問題或錯誤碼，如 4043':'搜尋情境、主題或錯誤代碼，例如：醫師卡解鎖、抽審、4043';mobile.addEventListener('change',ph);ph();render();
 let toastTimer;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,3200)}
 async function copyLink(code){const url=location.origin+location.pathname+'?doc='+code;let ok=false;try{await navigator.clipboard.writeText(url);ok=true}catch{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch{}ta.remove()}toast(ok?'已複製手冊連結，可以直接貼到 LINE':'請手動複製：'+url)}
 // ---- Reader modal ----
@@ -338,7 +346,7 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=persistent-round-reject-20261124"></script>
+<script src="assistant.js?v=warm-20261124"></script>
 <script>
 // 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），用紅筆把它的標題圈起來；收起它時圈圈也消失
 {let last=null;
@@ -346,11 +354,17 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
  function loop(w,h){let k=0;const j=v=>((v+(Math.random()-.5)*4)*((k++%2)?h/42:w/100)).toFixed(1);return raw(j)}
  function raw(j){const sx=j(10),sy=j(24);return 'M'+sx+' '+sy+' C'+j(4)+' '+j(9)+' '+j(34)+' '+j(2)+' '+j(58)+' '+j(3)+' C'+j(86)+' '+j(4)+' '+j(99)+' '+j(13)+' '+j(97)+' '+j(24)+' C'+j(95)+' '+j(36)+' '+j(62)+' '+j(40)+' '+j(38)+' '+j(38)+' C'+j(14)+' '+j(36)+' '+j(1)+' '+j(29)+' '+j(5)+' '+j(18)+' C'+j(8)+' '+j(11)+' '+j(20)+' '+j(6)+' '+j(32)+' '+j(5)}
  function titleOf(el){if(el.matches('.faq-item')){const sm=el.querySelector('summary'),t=[...sm.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());if(t){const r=document.createRange();r.selectNodeContents(t);return r}return sm}if(el.matches('.faq-type'))return el.querySelector('.hl');const h=el.matches('.route')?el.querySelector('.route-head h2'):el.matches('.station')?el.querySelector('.st-a h3'):null;if(!h)return null;const r=document.createRange();r.selectNodeContents(h);return r}
- function circle(el,animate){const old=el.querySelector(':scope>.hand-circle');if(old&&animate){old.remove()}const t=titleOf(el);if(!t)return;const tr=t.getBoundingClientRect(),br=el.getBoundingClientRect();if(!tr.width)return;if(old&&!animate){const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5);old.style.left=(tr.left-br.left-el.clientLeft-padX)+'px';old.style.top=(tr.top-br.top-el.clientTop-padY)+'px';old.style.width=(tr.width+padX*2)+'px';old.style.height=(tr.height+padY*2)+'px';return}
-  const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('class','hand-circle'+(animate?' draw':''));const W=tr.width+padX*2,H=tr.height+padY*2;svg.setAttribute('viewBox','0 0 '+W.toFixed(1)+' '+H.toFixed(1));svg.setAttribute('aria-hidden','true');
-  svg.style.cssText='left:'+(tr.left-br.left-el.clientLeft-padX)+'px;top:'+(tr.top-br.top-el.clientTop-padY)+'px;width:'+(tr.width+padX*2)+'px;height:'+(tr.height+padY*2)+'px';
-  const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',loop(W,H));p.setAttribute('pathLength','1');svg.appendChild(p);el.appendChild(svg)}
+ // 有螢光筆的大標題（常見問題分類、手冊分類）用紅圈圈起來；字比較多的問題、手冊標題改成手畫底線（換行的每一行都畫）
+ function under(w,y){const r=v=>(v+(Math.random()-.5)*2.4).toFixed(1),x0=Math.random()*3,x1=w-Math.random()*3;return 'M'+x0.toFixed(1)+' '+r(y)+' C'+r(w*.3)+' '+r(y+2)+' '+r(w*.65)+' '+r(y-2)+' '+x1.toFixed(1)+' '+r(y+.5)+' q'+r(-5)+' '+r(2.5)+' '+r(-12)+' '+r(3.5)}
+ function circle(el,animate){const old=el.querySelector(':scope>.hand-circle');const t=titleOf(el);if(!t){old&&old.remove();return}const tr=t.getBoundingClientRect(),br=el.getBoundingClientRect();if(!tr.width)return;
+  const ox=br.left+el.clientLeft,oy=br.top+el.clientTop,line=el.matches('.faq-item,.station');let box,lines=[];
+  if(line){[...t.getClientRects()].forEach(r=>{if(r.width<2)return;const l=lines.find(x=>Math.abs(x.b-r.bottom)<4);if(l){l.l=Math.min(l.l,r.left);l.r=Math.max(l.r,r.right)}else lines.push({l:r.left,r:r.right,b:r.bottom})});box={x:tr.left-ox-4,y:tr.top-oy,w:tr.width+8,h:tr.height+8}}
+  else{const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5);box={x:tr.left-ox-padX,y:tr.top-oy-padY,w:tr.width+padX*2,h:tr.height+padY*2}}
+  const geo=[box.x,box.y,box.w,box.h].map(v=>Math.round(v)).join(',');if(old&&!animate&&old.dataset.geo===geo)return;if(old)old.remove();
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','hand-circle'+(line?' hand-line':'')+(animate?' draw':''));svg.dataset.geo=geo;svg.setAttribute('viewBox','0 0 '+box.w.toFixed(1)+' '+box.h.toFixed(1));svg.setAttribute('aria-hidden','true');
+  svg.style.cssText='left:'+box.x+'px;top:'+box.y+'px;width:'+box.w+'px;height:'+box.h+'px';
+  const ds=line?lines.map(l=>({x:l.l-ox-box.x,d:under(l.r-l.l+4,l.b-oy-box.y+3)})):[{x:0,d:loop(box.w,box.h)}];
+  ds.forEach((o,i)=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',o.d);p.setAttribute('pathLength','1');if(o.x)p.setAttribute('transform','translate('+o.x.toFixed(1)+' 0)');if(line)p.style.animationDelay=(i*.35)+'s';svg.appendChild(p)});el.appendChild(svg)}
  function keyOf(el){if(el.matches('.faq-item'))return '#'+el.id;if(el.matches('.faq-type'))return '#'+el.querySelector('.faq-type-body').id;if(el.matches('.route'))return '.route-toggle[data-route="'+el.querySelector('.route-toggle').dataset.route+'"]';if(el.matches('.station'))return '.station[data-id="'+el.dataset.id+'"]';return null}
  function find(k){const n=k&&document.querySelector(k);return n&&n.closest('.faq-item,.faq-type,.route,.station')}
  function clear(){document.querySelectorAll('.last-open').forEach(x=>{x.classList.remove('last-open');x.querySelectorAll(':scope>.hand-circle').forEach(c=>c.remove())})}
