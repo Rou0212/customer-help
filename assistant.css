@@ -161,3 +161,11 @@ body.modal-open .lc-fab-wrap{display:none}
 @media(max-width:640px){.lc-pin{margin:6px 8px 2px;padding:8px 10px}.lc-pin-txt b{font-size:13px}}
 /* 置頂訊息重點：下半部黃色螢光筆 */
 .lc-pin-hl{background:linear-gradient(transparent 52%,#FFE36E 52%);color:inherit;padding:0 2px;border-radius:2px}
+
+/* 每種動物自己的睡姿：平常藏起來，睡覺時只顯示睡姿 */
+.lc-asleep{display:none}
+.lc-root.lc-sleeping .lc-cat:has(.lc-asleep)>*{display:none}
+.lc-root.lc-sleeping .lc-cat:has(.lc-asleep)>.lc-asleep{display:inline}
+@media(prefers-reduced-motion:no-preference){.lc-root.lc-sleeping .lc-asleep{transform-origin:60px 110px;animation:lc-sleep-breathe 3.2s ease-in-out infinite}.lc-snot{transform-origin:57px 93px;animation:lc-snot 2.6s ease-in-out infinite}}
+@keyframes lc-sleep-breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.035)}}
+@keyframes lc-snot{0%,100%{transform:scale(.55)}55%{transform:scale(1.15)}}

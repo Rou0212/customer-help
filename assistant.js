@@ -222,6 +222,58 @@ const PETS={
   treatSays:['吱！瓜子好香～','先塞進臉頰…等等再吃','吃飽了就有力氣幫你找手冊','吱吱～再來一顆也可以喔','臉頰鼓鼓～我繼續值班囉'],
   toySays:['吱吱！衝衝衝～','滾輪轉起來了！','跑好快～','吱！再快一點！'],wakeSay:'吱…（揉揉臉）',sound:'吱',hello:'吱吱！小倉鼠來幫你找手冊囉'}
 };
+// 各物種的睡姿（小黑貓除外）：狗捲成一圈、兔子耳朵往後貼平趴成吐司、熊趴著流鼻涕泡泡、倉鼠縮成一顆球
+const PET_SLEEP={
+ // 小貴賓：側趴捲成一圈，下巴靠在前腳上，耳朵垂下，尾巴繞到前面
+ poodle:'<ellipse cx="62" cy="102" rx="36" ry="12" fill="#DB8E5C"/>'
+  +'<circle cx="66" cy="90" r="15" fill="#DB8E5C"/><circle cx="82" cy="93" r="13" fill="#DB8E5C"/><circle cx="94" cy="100" r="10" fill="#DB8E5C"/><circle cx="54" cy="95" r="12" fill="#DB8E5C"/><circle cx="74" cy="103" r="11" fill="#DB8E5C"/>'
+  +'<circle cx="99" cy="108" r="6" fill="#C97C4D"/>'
+  +'<ellipse cx="34" cy="108" rx="8" ry="4.6" fill="#F6BE8E"/><ellipse cx="50" cy="109" rx="8" ry="4.6" fill="#F6BE8E"/>'
+  +'<circle cx="25" cy="90" r="8" fill="#DB8E5C"/><circle cx="24" cy="100" r="7.5" fill="#DB8E5C"/><circle cx="58" cy="91" r="8" fill="#DB8E5C"/><circle cx="59" cy="100" r="7.5" fill="#DB8E5C"/>'
+  +'<circle cx="41" cy="88" r="17" fill="#DB8E5C"/><circle cx="41" cy="89" r="13.5" fill="#C97C4D"/>'
+  +'<circle cx="31" cy="73" r="7" fill="#DB8E5C"/><circle cx="39" cy="69" r="8" fill="#DB8E5C"/><circle cx="48" cy="71" r="7" fill="#DB8E5C"/><circle cx="35" cy="76" r="5.5" fill="#DB8E5C"/><circle cx="44" cy="75" r="5.5" fill="#DB8E5C"/>'
+  +'<circle cx="36.5" cy="95" r="5" fill="#F6BE8E"/><circle cx="45.5" cy="95" r="5" fill="#F6BE8E"/><circle cx="41" cy="98" r="5.5" fill="#F6BE8E"/><circle cx="41" cy="92.5" r="4.6" fill="#F6BE8E"/>'
+  +'<path d="M38.4 91.2q2.6-1.2 5.2 0q-.8 2.4-2.6 3q-1.8-.6-2.6-3z" fill="#16203A"/>'
+  +'<path d="M31 85.5q3.2 2.8 6.4 0M44.6 85.5q3.2 2.8 6.4 0" stroke="#16203A" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+  +'<path d="M37.5 98.5q1.7 1.8 3.5 0q1.8 1.8 3.5 0" stroke="#16203A" stroke-width="1.1" fill="none" stroke-linecap="round"/>',
+ // 小白兔：趴成一條吐司，長耳朵往後貼平在背上，前腳收在胸前
+ rabbit:'<ellipse cx="64" cy="96" rx="36" ry="17" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/>'
+  +'<circle cx="99" cy="98" r="5.5" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/>'
+  +'<ellipse cx="74" cy="75" rx="23" ry="6.8" transform="rotate(9 74 75)" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="74" cy="75" rx="17" ry="3.2" transform="rotate(9 74 75)" fill="#F2A9A0"/>'
+  +'<ellipse cx="71" cy="81" rx="22" ry="6.4" transform="rotate(15 71 81)" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="71" cy="81" rx="16" ry="3" transform="rotate(15 71 81)" fill="#F2A9A0"/>'
+  +'<ellipse cx="38" cy="107" rx="7" ry="4.2" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/><ellipse cx="53" cy="108" rx="7" ry="4.2" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/>'
+  +'<ellipse cx="45" cy="88" rx="23" ry="19" fill="#FFFDF9" stroke="#1B2340" stroke-width=".9"/>'
+  +'<ellipse cx="33" cy="94" rx="4.5" ry="2.6" fill="#F6C6CC" opacity=".8"/><ellipse cx="57" cy="94" rx="4.5" ry="2.6" fill="#F6C6CC" opacity=".8"/>'
+  +'<path d="M33.5 87q3.2 2.8 6.4 0M50 87q3.2 2.8 6.4 0" stroke="#16203A" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+  +'<path d="M42.6 92h4.8l-2.4 2.6z" fill="#F2A9A0"/><path d="M41.6 96q1.7 2 3.4 0q1.7 2 3.4 0" stroke="#16203A" stroke-width="1.1" fill="none" stroke-linecap="round"/>'
+  +'<path d="M26 92 17 90.5M26 95 17 96.5M64 92l9-1.5M64 95l9 1.5" stroke="#16203A" stroke-width="1" stroke-linecap="round"/>',
+ // 小熊：大字形趴著，下巴靠在兩隻前掌上，鼻子吹出鼻涕泡泡
+ bear:'<ellipse cx="68" cy="98" rx="36" ry="15" fill="#A8663F"/><circle cx="102" cy="96" r="4" fill="#A8663F"/>'
+  +'<ellipse cx="98" cy="108" rx="9" ry="5" fill="#B97650"/>'
+  +'<circle cx="33" cy="66" r="9" fill="#A8663F"/><circle cx="71" cy="66" r="9" fill="#A8663F"/><circle cx="34" cy="67" r="5" fill="#E8968C"/><circle cx="70" cy="67" r="5" fill="#E8968C"/>'
+  +'<ellipse cx="52" cy="85" rx="25" ry="21" fill="#A8663F"/>'
+  +'<ellipse cx="52" cy="93" rx="10" ry="7.5" fill="#FAE9CF"/>'
+  +'<path d="M48.8 89.3q3.2-1.4 6.4 0q-.9 2.8-3.2 3.7q-2.3-.9-3.2-3.7z" fill="#16203A"/>'
+  +'<path d="M40 83q3.4 3 6.8 0M57.2 83q3.4 3 6.8 0" stroke="#16203A" stroke-width="1.6" fill="none" stroke-linecap="round"/>'
+  +'<path d="M49 96.5q1.5 1.6 3 0q1.5 1.6 3 0" stroke="#16203A" stroke-width="1.1" fill="none" stroke-linecap="round"/>'
+  +'<ellipse cx="36" cy="106" rx="11" ry="6.5" fill="#B97650"/><ellipse cx="66" cy="106" rx="11" ry="6.5" fill="#B97650"/>'
+  +'<path d="M31 104v2.6M35 103.5v2.6M39 104v2.6M61 104v2.6M65 103.5v2.6M69 104v2.6" stroke="#7E4A2C" stroke-width="1" stroke-linecap="round"/>'
+  +'<g class="lc-snot"><circle cx="60" cy="92" r="5.5" fill="#CDEBFA" fill-opacity=".75" stroke="#8CC8EA" stroke-width=".9"/><circle cx="58.3" cy="90.3" r="1.4" fill="#fff"/></g>',
+ // 小倉鼠：縮成一顆圓滾滾的毛球，臉埋在肚子前，小手抱在下巴
+ hamster:'<circle cx="60" cy="88" r="27" fill="#D6943F"/>'
+  +'<circle cx="45" cy="64" r="6.5" fill="#D6943F"/><circle cx="71" cy="62" r="6.5" fill="#D6943F"/><circle cx="45.5" cy="64.5" r="3.6" fill="#F2A9A0"/><circle cx="70.5" cy="62.5" r="3.6" fill="#F2A9A0"/>'
+  +'<circle cx="60" cy="88" r="27" fill="none" stroke="#C17F31" stroke-width="1" stroke-dasharray="2 3" opacity=".5"/>'
+  +'<path d="M78 74q6 8 2 18" stroke="#C17F31" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".6"/>'
+  +'<ellipse cx="54" cy="100" rx="19" ry="11" fill="#FDF1DC"/>'
+  +'<ellipse cx="42" cy="93" rx="8" ry="6" fill="#FDF1DC"/><ellipse cx="64" cy="93" rx="8" ry="6" fill="#FDF1DC"/>'
+  +'<path d="M42.5 88q2.8 2.4 5.6 0M58 88q2.8 2.4 5.6 0" stroke="#16203A" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+  +'<path d="M50.8 92h4.4l-2.2 2.4z" fill="#F2A9A0"/>'
+  +'<path d="M38 94 30 93M38 96.5 30 98M68 94l8-1M68 96.5l8 1.5" stroke="#16203A" stroke-width="1" stroke-linecap="round"/>'
+  +'<circle cx="49" cy="100" r="3.6" fill="#F4B2A8"/><circle cx="57" cy="100" r="3.6" fill="#F4B2A8"/>'
+  +'<ellipse cx="45" cy="113" rx="6.5" ry="3.6" fill="#F4B2A8"/><ellipse cx="73" cy="112" rx="6.5" ry="3.6" fill="#F4B2A8"/>'
+};
+// 睡覺時換成牠們自己的睡姿（小黑貓維持原本的樣子）；睡姿比較矮，放大一點移到圓框中間
+for(const k in PET_SLEEP)PETS[k].svg=PETS[k].svg.replace('</svg>','<g class="lc-asleep"><g transform="translate(60 72) scale(1.15) translate(-61 -88)">'+PET_SLEEP[k]+'</g></g></svg>');
 const PET_ORDER=['cat','poodle','rabbit','bear','hamster'],PET_KEY='leyan-pet';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
 // Topic evidence only controls whether to ask about a possible change; it never generates answers.
