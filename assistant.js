@@ -24,6 +24,8 @@ function routeQuestion(q){const n=norm(q);const imageRoute=imageUploadRoute(q);i
  if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
  if(!/樂易秀|牙周|上傳|健保|申報/.test(n)&&imageObject&&(exportAction||locationAsk))return {type:'clarify',message:'請問是哪一個系統的圖片（例如樂易秀），以及是匯出、下載還是上傳？確認系統與操作後才能提供對應位置。'};
 
+ // General reasonable-volume questions use the approved software FAQ; explicit regional indicators retain their document route.
+ if(/合理量|合理門診點數/.test(n)&&!/指標|管控|免審|快速通關|規範|官方|分區/.test(n))return {type:'topics',faqs:['reasonable-volume-adjustment'],docs:[]};
  if(rejectedCandidates(q))return {type:'clarify',message:'請補充您真正要處理的功能、操作步驟或完整錯誤碼；不會沿用剛才的候選。'};
  if(/其他訊息|不是簡訊/.test(n)||(!/簡訊/.test(n)&&/不能發訊息|訊息.*(?:不能發|發不出)/.test(n)))return {type:'clarify',message:'請問是簡訊，還是其他功能的訊息？若不是簡訊，請補充功能名稱與完整畫面訊息（請勿提供個資），不直接套用簡訊處理方式。'};
  if(/帳密忘記|帳號.*(?:哪|忘)|查詢帳號密碼|帳號密碼忘/.test(n))return {type:'clarify',message:'請問是哪一個系統的帳號（看診系統、樂易智、Google 或健保 VPN）？請勿輸入密碼或驗證碼；確認系統後才能判斷對應主題。'};

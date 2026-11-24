@@ -347,7 +347,7 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="assistant.js?v=single-query-native-picker-20261124"></script>
+<script src="assistant.js?v=single-query-reasonable-volume-20261124"></script>
 <script>
 // 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），用紅筆把它的標題圈起來；收起它時圈圈也消失
 {let last=null;
