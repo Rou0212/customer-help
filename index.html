@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=persistent-round-reject-20261124"><style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=tip-fade-20261124"><style>
 :root{--ink:#15191E;--muted:#4A5159;--line:#DCE0E4;--panel:#F3F4F2;--blue:#15191E;--blue-dark:#000;--apricot:#15191E;--apricot-soft:#F3F4F2;--apricot-ink:#15191E;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:#fff}
 *{box-sizing:border-box}html{background:#fff}body{margin:0;line-height:1.6;background:#fff}button,input{font:inherit;color:inherit}button,a{touch-action:manipulation}button{cursor:pointer}a{color:var(--ink)}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}
 :focus-visible{outline:3px solid #1D4F91;outline-offset:3px}
@@ -139,8 +139,10 @@ html,body{background:#F7F9FC}
 .top{position:relative}
 .site-logo{position:absolute;top:24px;right:30px;width:150px;aspect-ratio:280/64;overflow:hidden;line-height:0;border-radius:6px}
 .site-logo img{display:block;width:100%;height:auto;margin-top:-25.7%}
-@media(max-width:640px){.site-logo{top:14px;right:14px;width:104px}}
+@media(max-width:640px){.site-logo{position:static;display:block;margin:-6px 0 8px auto;width:96px}}
 @media(max-width:360px){.site-logo{width:84px}}
+/* 手機：問題類型改成一欄，標題不會擠到換三行 */
+@media(max-width:480px){.types{grid-template-columns:minmax(0,1fr)}.type-btn{min-height:58px}}
 
 /* 兩個分頁用不同的淡色區分：常見問題＝淡藍、操作手冊＝淡粉紅 */
 #tab-faq{--tc:#2F64A8;--tb:#F1F6FF;--tbs:#E3EEFF;--tl:#BFD6F6}
@@ -307,7 +309,7 @@ tab=userTab;if(q&&!forced){if(tab==='faq'&&!fq.length&&filtered.length)tab='docs
 $('#tab-faq .n').textContent=fq.length+' 則';$('#tab-docs .n').textContent=filtered.length+' 份';$('#tab-faq .n').classList.toggle('zero',!fq.length);$('#tab-docs .n').classList.toggle('zero',!filtered.length);
 document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===tab));$('#panel-faq').hidden=tab!=='faq';$('#panel-docs').hidden=tab!=='docs';$('#faq').hidden=false;$('#empty').hidden=tab==='faq'?!!fq.length:!!filtered.length;let related=$('#related-category');if(!related){related=document.createElement('button');related.id='related-category';related.type='button';related.textContent='查看健保申報與審查手冊';related.onclick=()=>setCategory('健保作業');$('#empty').append(related)}related.hidden=!(ptype==='reg'&&tab==='docs'&&!filtered.length);$('#empty p').textContent=ptype==='reg'&&tab==='docs'&&!filtered.length?'掛號與帳務目前以常見問題提供指引，沒有專屬操作手冊。如要查申報作業，可查看健保申報與審查分類。':'找不到相關內容，試試其他情境、主題或錯誤代碼。'}
 document.querySelector('.tabs').onclick=e=>{const b=e.target.closest('[data-tab]');if(b)setTab(b.dataset.tab)};$('#faq-list').addEventListener('click',e=>{const tg=e.target.closest('.faq-toggle');if(tg){const id=tg.dataset.fold,box=tg.closest('.faq-type'),body=box.querySelector('.faq-type-body'),open=tg.getAttribute('aria-expanded')!=='true';open?openFaqTypes.add(id):openFaqTypes.delete(id);tg.setAttribute('aria-expanded',open);box.classList.toggle('open',open);body.hidden=!open;return}const m=e.target.closest('.faq-more');if(m){e.stopPropagation();setType(m.dataset.type)}},true);$('#types').onclick=e=>{const b=e.target.closest('[data-type]');if(b)setType(b.dataset.type===ptype?null:b.dataset.type)};$('#chips').onclick=e=>{const b=e.target.closest('[data-category]');if(b)setCategory(b.dataset.category===category&&category!=='全部'?'全部':b.dataset.category)};$('#query').oninput=()=>{forced=false;render()};$('form.search').onsubmit=e=>{e.preventDefault();render();$('#query').blur()};$('#reset').onclick=()=>{$('#query').value='';setCategory('全部');$('#query').focus()};
-const ph=()=>$('#query').placeholder=mobile.matches?'搜尋主題或錯誤碼，如醫師卡解鎖':'搜尋情境、主題或錯誤代碼，例如：醫師卡解鎖、抽審、4043';mobile.addEventListener('change',ph);ph();render();
+const ph=()=>$('#query').placeholder=mobile.matches?'搜尋問題或錯誤碼，如 4043':'搜尋情境、主題或錯誤代碼，例如：醫師卡解鎖、抽審、4043';mobile.addEventListener('change',ph);ph();render();
 let toastTimer;function toast(msg){const t=$('#toast');t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.hidden=true,3200)}
 async function copyLink(code){const url=location.origin+location.pathname+'?doc='+code;let ok=false;try{await navigator.clipboard.writeText(url);ok=true}catch{const ta=document.createElement('textarea');ta.value=url;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch{}ta.remove()}toast(ok?'已複製手冊連結，可以直接貼到 LINE':'請手動複製：'+url)}
 // ---- Reader modal ----

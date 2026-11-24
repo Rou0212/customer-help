@@ -132,3 +132,8 @@ body.modal-open .lc-fab-wrap{display:none}
 .lc-root .lc-pic svg,.lc-root .lc-mic svg{width:19px;height:19px}
 .lc-root .lc-send{height:44px;padding:0 9px}
 @media(max-width:640px){.lc-fab-wrap .lc-panel{bottom:76px;height:min(500px,calc(100dvh - 108px))}.lc-head{flex-wrap:wrap;gap:4px 6px}.lc-head-actions{justify-content:flex-end;flex-basis:100%}.lc-head .lc-close{width:32px;height:32px}.lc-head .lc-city-bar{flex:1;min-width:0}.lc-round-bar{padding:5px 10px}.lc-quick{padding:6px 10px}}
+
+/* 「需要幫忙嗎？」只在剛打開頁面時出現幾秒，之後收起來不擋內容；滑鼠移到小動物上會再出現 */
+.lc-fab-tip{animation:lc-tip-out .4s ease 6s forwards;transition:opacity .2s}
+@keyframes lc-tip-out{to{opacity:0;visibility:hidden}}
+.lc-fab:hover .lc-fab-tip,.lc-fab:focus-visible .lc-fab-tip{animation:none;opacity:1;visibility:visible}
