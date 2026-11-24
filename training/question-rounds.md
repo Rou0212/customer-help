@@ -1,0 +1,11 @@
+# Website question rounds
+
+`assistant.js` owns only the website widget; LINE worker remains unchanged.
+
+- Text, quick prompts, confirmed local OCR text and speech use `ask`.
+- `createQuestionRound` keeps local round text, debounces 5 seconds from last submission, and flushes at 60 seconds from the first submission in a batch. Immediate query flushes that batch.
+- Dependent prefixes / error codes supplement the round; explicit `不是…是…` replaces the direction. Otherwise visitors choose supplement or new question before ranking. New question and city changes clear timers and fixed clarifications; human requests bypass timers and clear state immediately.
+- Before reranking, disable prior candidate controls and links. Approved FAQ/manual answers still require candidate confirmation; account dental/non-dental remains an explicit confirmation path.
+- OCR results and their buttons carry a round epoch and city check so stale images cannot submit into a later round.
+
+Verification: run `for f in tests/*.cjs; do node "$f" || exit 1; done`. `tests/question-round.cjs` uses a fake clock for exact debounce / 60-second / cancellation assertions. Browser acceptance: split input, correction, candidate confirmation, supplementary error code, ambiguous change/new selection, account clinic follow-up, human request and city switch while timer pending. Check mobile overflow and browser errors.

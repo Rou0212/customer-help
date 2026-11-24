@@ -222,6 +222,26 @@ const PETS={
 };
 const PET_ORDER=['cat','poodle','rabbit','bear','hamster'],PET_KEY='leyan-pet';
 const QUICK=['取到 02 卡號','讀卡機沒反應','PIN 碼鎖住','停電要怎麼關機','上傳無法夾帶檔案','手機看不到約診'];
+// A round stays local to this widget; only approved routing consumes the assembled text.
+function createQuestionRound({run,choose,pending,clock={now:()=>Date.now(),set:(f,n)=>setTimeout(f,n),clear:t=>clearTimeout(t)}}){
+ let text='',first=null,timer=null,held='';
+ const cancel=()=>{if(timer!==null)clock.clear(timer);timer=null};
+ const reset=()=>{cancel();text='';first=null;held=''};
+ const flush=()=>{cancel();if(held)return;first=null;if(text)run(text)};
+ function submit(q,mode){
+  q=q.trim();if(!q)return;
+  if(held&&!mode){held+='\n'+q;choose();return}
+  const correction=q.match(/^(?:不對[，, ]*)?不是[\s\S]+?(?:而是|是|改成)[，, ]*([\s\S]+)$/);
+  if(mode==='new'||correction){reset();q=correction?correction[1]:q}
+  else if(text&&!mode&&!/^(?:補充|另外補充|還有|而且|就是|這個|它|出現|顯示|錯誤|代碼|無法|不能|沒有|沒反應|在|我是|我們是)|^[a-z]?\d{4,}[a-z]?$/i.test(q)){
+   cancel();held=q;choose();return;
+  }
+  held='';text=text?text+'\n'+q:q;
+  if(first===null)first=clock.now();
+  cancel();pending();timer=clock.set(flush,Math.max(0,Math.min(5000,60000-(clock.now()-first))));
+ }
+ return {submit,flush,reset,resolve:mode=>{const q=held;held='';if(q)submit(q,mode)},get text(){return text}};
+}
 function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  root.classList.add('lc-root','lc-mode-'+mode);
@@ -283,7 +303,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   for(const field of root.querySelectorAll('.lc-form input,.lc-form button,.lc-quick button'))field.disabled=!clinicCity;
  }
  citySelect.onchange=()=>{
-  clinicCity=citySelect.value;
+  resetRound();clinicCity=citySelect.value;
   try {if(clinicCity)localStorage.setItem(cityKey,clinicCity);else localStorage.removeItem(cityKey)}catch{}
   updateCity();
   window.dispatchEvent(new Event('leyan-city-change'));
@@ -352,11 +372,31 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let accountClinicPending=false;
  function chooseAccountClinic(){accountClinicPending=true;say('請問是牙科院所還是非牙科？<button type="button" class="lc-choice" data-account-clinic="dental">牙科院所</button><button type="button" class="lc-choice" data-account-clinic="other">非牙科院所</button>');}
  function showAccountClinic(kind){accountClinicPending=false;const f=FQ.find(x=>x.id===(kind==='dental'?'dental-daily-cash':'report-daily-receipts'));if(f)say(faqHtml(f));}
- function ask(q){q=q.trim();if(!q)return;if(!clinicCity){citySelect.focus();return}lastQuestion=q;say(esc(q),'user');input.value='';const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function query(q){lastQuestion=q;const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say('我還不能確定是哪個問題。可以換個說法或輸入錯誤代碼；個案請找人工客服。'+supportHtml(pet.name));return}
   say('我找到幾個可能的主題，請先確認妳要問的是哪一個；點選後才會顯示內容。'+choices(fr,r)+'<small class="lc-choice-hint">都不是？請換個說法，或直接輸入畫面上的錯誤代碼。</small>')}
+
+ let roundEpoch=0;
+ function invalidateChoices(){for(const b of log.querySelectorAll('button'))b.disabled=true;for(const a of log.querySelectorAll('a')){a.removeAttribute('href');a.setAttribute('aria-disabled','true')}}
+ const roundBar=document.createElement('div');roundBar.className='lc-round-bar';
+ roundBar.innerHTML='<small role="status" aria-live="polite">可分段補充問題；最後送出後 5 秒查詢，連續輸入最多等 60 秒。</small><button type="button" class="lc-choice" data-round="flush">立即查詢</button><button type="button" class="lc-choice" data-round="reset">新問題</button>';
+ $('.lc-form').before(roundBar);
+ const roundStatus=roundBar.querySelector('small');
+ const round=createQuestionRound({run:q=>{roundStatus.textContent='可繼續補充本題，或按「新問題」。';invalidateChoices();query(q)},pending:()=>{roundStatus.textContent='正在合併本題，最後送出後 5 秒查詢（最多 60 秒）；也可立即查詢。'},choose:()=>{roundStatus.textContent='請先選擇這段文字的用途。';say('這段是補充上一題，還是問新問題？<button type="button" class="lc-choice" data-round="append">補充上一題</button><button type="button" class="lc-choice" data-round="new">問新問題</button>')}});
+ function resetRound(){round.reset();roundEpoch++;lastQuestion='';accountClinicPending=false;invalidateChoices();roundStatus.textContent='已開始新問題，請輸入問題（請勿提供個資）。'}
+ function ask(q){q=String(q).trim();if(!q)return;if(!clinicCity){citySelect.focus();return}
+  roundEpoch++;say(esc(q),'user');input.value='';
+  if(humanRequest(q)){resetRound();query(q);return}
+  if(/^(?:新問題|重新開始|重置)$/.test(q)){resetRound();return}
+  if(/^(?:立即查詢|現在查詢)$/.test(q)){round.flush();return}
+  const fixed=accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(norm(q));
+  invalidateChoices();
+  if(fixed){round.reset();query(q);return}
+  accountClinicPending=false;round.submit(q);
+ }
+ roundBar.onclick=e=>{const b=e.target.closest('[data-round]');if(!b)return;if(b.dataset.round==='reset')resetRound();else round.flush()};
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
  let runnerEl=null;const catEl=()=>runnerEl?runnerEl.querySelector('.lc-cat'):root.querySelector('.lc-cat');
@@ -474,20 +514,20 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  if(swapBtn)swapBtn.addEventListener('click',()=>{const r=swapBtn.getBoundingClientRect();openMenu(r.left,r.bottom+4,false,true)});
  armIdle();
  root.addEventListener('click',e=>{
-  const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
+  if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const rb=e.target.closest('[data-round]');if(rb){const action=rb.dataset.round;if(action==='append'||action==='new'){invalidateChoices();round.resolve(action==='new'?'new':'append')}return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
   const ac=e.target.closest('[data-account-clinic]');if(ac){showAccountClinic(ac.dataset.accountClinic);return}const fp=e.target.closest('[data-function-page]');if(fp){const d=pool.find(x=>x.id==='leyizhi-backend'),p=Number(fp.dataset.functionPage);if(d){if(opt.onOpen)opt.onOpen(d,BASE+d.url,p);else window.open(BASE+'index.html?manual=leyizhi-backend&page='+p,'_blank','noopener')}return}const fb=e.target.closest('[data-faq]');if(fb){const f=FQ.find(x=>x.id===fb.dataset.faq);if(f){if(f.group==='taipei'&&indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}if(norm(lastQuestion).includes('新特約')&&!newContractFaqs(lastQuestion,clinicCity).some(x=>x.id===f.id)){chooseNewContract(lastQuestion);return}say(faqHtml(f))}return}const db=e.target.closest('[data-doc]');if(db){const d=pool.find(x=>x.id===db.dataset.doc);if(d){const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();say(hit&&hit.status==='found'?policyImage(hit):'妳選的是這份手冊；點開即可查看內容：'+card(d))}return}const a=e.target.closest('.lc-doc');if(a&&opt.onOpen){e.preventDefault();const d=pool.find(x=>x.id===a.dataset.id);if(d)open(d);return}const q=e.target.closest('[data-q]');if(q)ask(q.dataset.q)});
  $('.lc-form').onsubmit=e=>{e.preventDefault();ask(input.value)};
- async function look(file){const city=clinicCity;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
+ async function look(file){const city=clinicCity,epoch=roundEpoch;if(!city){citySelect.focus();return}if(!file||!/^image\//.test(file.type))return;const url=URL.createObjectURL(file);say('<img class="lc-shot" src="'+url+'" alt="你傳的截圖">','user');
   const wait=say('我看一下畫面喔…'+(ocrWorker?'':'<br><small>第一次要下載辨識程式，大約 10～20 秒，之後就很快。圖片只在你的電腦上辨識，不會上傳。</small>'));
   let text='',how='';try{const r=await ocr(file);text=r.t;how=r.how}catch(e){countQuestion(city,'未分類');wait.innerHTML=pet.sound+'…沒辦法辨識這張圖（可能是網路擋住了辨識程式）。可以直接打字告訴我畫面上的錯誤代碼或訊息。';return}
   if(how==='unclear'){countQuestion(city,'未分類');wait.innerHTML='我有看到錯誤視窗，但上面的數字看不清楚 😿<br>請直接<b>打出視窗上的錯誤代碼</b>（例如 5022），我再列出可能的主題讓你確認。';log.scrollTop=log.scrollHeight;return}
-  if(city!==clinicCity){wait.innerHTML='縣市已切換，請依目前縣市重新輸入問題。';return}
+  if(city!==clinicCity||epoch!==roundEpoch){wait.innerHTML='縣市已切換，請依目前縣市重新輸入問題。';return}
   // Never treat a partial four-digit OCR hit as a five-digit medical procedure.
   const recognized=String(text).replace(/([\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])/g,'$1').trim();
   wait.innerHTML='辨識文字僅供核對，請修正後按「用這段文字查詢」，再確認候選主題。<br><textarea class="lc-ocr-text" aria-label="核對或修正辨識文字" rows="3" style="width:100%;box-sizing:border-box"></textarea><button type="button" class="lc-choice lc-ocr-query">用這段文字查詢</button><small>看不清楚時，可直接改填醫令代碼（如 92133C、91021）或問題文字；圖片不會上傳。</small>';
   wait.querySelector('textarea').value=recognized;
-  wait.querySelector('button').onclick=()=>{const q=wait.querySelector('textarea').value.trim();if(q)ask(q);else wait.querySelector('textarea').focus()};
+  wait.querySelector('button').onclick=()=>{const q=wait.querySelector('textarea').value.trim();if(epoch!==roundEpoch||city!==clinicCity)return;if(q)ask(q);else wait.querySelector('textarea').focus()};
   log.scrollTop=log.scrollHeight}
 
  const fileIn=$('.lc-file');$('.lc-pic').onclick=()=>fileIn.click();fileIn.onchange=()=>{look(fileIn.files[0]);fileIn.value=''};
@@ -501,5 +541,5 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder='輸入問題或文件代碼…';rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
-window.LeyanCat={mount,rank,rankFaq,routeQuestion,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
+window.LeyanCat={createQuestionRound,mount,rank,rankFaq,routeQuestion,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
 })();
