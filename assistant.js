@@ -23,6 +23,7 @@ function routeQuestion(q){const n=norm(q);
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  const routes=[
+ [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
  [/(?:轉診單|轉診院所|建議轉診).*(?:查不到|找不到|沒看到|沒有院所)/,['referral-clinic-not-found'],[]],
  [/(?:(?:中華電信|電信|網路).*(?:維修|故障|不通|異常|斷).*(?:掛號)|(?:掛號).*(?:電信|網路).*(?:維修|故障|不通|異常|斷))/,['telecom-outage-registration'],[]],
@@ -92,7 +93,7 @@ function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='t
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
  if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
- const required={'reasonable-volume-adjustment':/合理量|合理門診點數/,'referral-clinic-not-found':/轉診/,'telecom-outage-registration':/中華電信|電信|網路/,'id-change-refill-card':/身分證|身份證|證號/,'patient-name-question-mark':/姓名|名字|特殊字|生僻字|罕用字/,'other-clinic-procedure-warning':/(?:他院|外院|別家|其他院所|其他診所)/,'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
+ const required={'copay-exemption-eligibility':/部分負擔|榮福/,'reasonable-volume-adjustment':/合理量|合理門診點數/,'referral-clinic-not-found':/轉診/,'telecom-outage-registration':/中華電信|電信|網路/,'id-change-refill-card':/身分證|身份證|證號/,'patient-name-question-mark':/姓名|名字|特殊字|生僻字|罕用字/,'other-clinic-procedure-warning':/(?:他院|外院|別家|其他院所|其他診所)/,'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
  if(required[p.f.id]&&!required[p.f.id].test(n))return {f:p.f,score:0};
  if(p.f.id==='progress-1-7'&&/申報|補報|抽審|上傳|簽章/.test(n)&&!/樂晴|掛號|寫卡/.test(n))return {f:p.f,score:0};
  if(p.f.id==='supplement-review-upload'&&!/抽審|送審/.test(n))return {f:p.f,score:0};
