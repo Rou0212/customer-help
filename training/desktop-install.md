@@ -1,6 +1,6 @@
 # Existing desktop/PWA entry
 
-Use the existing `cat.html` install entry and `manifest.webmanifest`; do not make a separate app per animal. The explicit manifest `id` equals its unchanged `start_url` (`./cat.html`), matching the prior implicit identity. Keep existing installation name/icons and scope stable.
+Use the existing `cat.html` install entry and `manifest.webmanifest`; do not make a separate app per animal. The explicit manifest `id` is `/customer-help/cat.html`, matching the unchanged deployed `start_url` (`./cat.html`) and prior implicit identity. Resolve `id` against the origin, not the manifest directory; `./cat.html` would incorrectly create the root `/cat.html` identity. Keep existing installation name/icons and scope stable.
 
 ## Animal selection
 
