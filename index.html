@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=persistent-round-20261124"><style>
+<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="操作指南與手冊：依問題類型查找常見問題與手冊，直接閱讀或下載。"><link rel="icon" href="data:,"><title>操作指南與手冊</title><link rel="stylesheet" href="assistant.css?v=persistent-round-reject-20261124"><style>
 :root{--ink:#15191E;--muted:#4A5159;--line:#DCE0E4;--panel:#F3F4F2;--blue:#15191E;--blue-dark:#000;--apricot:#15191E;--apricot-soft:#F3F4F2;--apricot-ink:#15191E;font-family:system-ui,-apple-system,"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;color:var(--ink);background:#fff}
 *{box-sizing:border-box}html{background:#fff}body{margin:0;line-height:1.6;background:#fff}button,input{font:inherit;color:inherit}button,a{touch-action:manipulation}button{cursor:pointer}a{color:var(--ink)}button:disabled{opacity:.45;cursor:default}[hidden]{display:none!important}
 :focus-visible{outline:3px solid #1D4F91;outline-offset:3px}
@@ -338,7 +338,7 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
 {const pf=new URLSearchParams(location.search).get('faq');if(pf)openFaq(pf)}
 {const p=new URLSearchParams(location.search),want=(p.get('doc')||decodeURIComponent(location.hash.slice(1))).trim().toUpperCase();if(want){const d=documents.find(x=>!x.region&&!x.parent&&STATION[x.id]===want)||documents.find(x=>!x.region&&x.id.toUpperCase()===want);if(d){goTo(d.parent||d.id);if(p.has('read')){const sourcePage=Number(p.get('page'))||1,excerptPage=Number(p.get('excerptPage'))||0;const readPage=d.id==='nhi-dentist-handbook-2026'?(excerptPage||NHI_SOURCE_TO_EXCERPT[sourcePage]||1):sourcePage;openReader(d.id,null,readPage)}}}}
 </script>
-<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=persistent-round-20261124"></script>
+<script src="click-fx.js?v=20261123-bluebubble2"></script><script src="assistant.js?v=persistent-round-reject-20261124"></script>
 <script>
 // 記住「最後展開」的框（常見問題分類、問題、手冊分類、手冊），用紅筆把它的標題圈起來；收起它時圈圈也消失
 {let last=null;
