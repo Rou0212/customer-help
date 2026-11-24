@@ -210,6 +210,8 @@ html,body{background:#F7F9FC}
 .hand-circle{position:absolute;z-index:1;overflow:visible;pointer-events:none}
 .hand-circle path{fill:none;stroke:#E5393B;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1;stroke-dashoffset:0;opacity:.9}
 .hand-circle.draw path{animation:hand-draw .7s cubic-bezier(.45,.1,.3,1) both}
+.hand-line path{stroke-width:2.4}
+.hand-line.draw path{animation-duration:.4s;animation-timing-function:cubic-bezier(.3,.1,.3,1)}
 @keyframes hand-draw{from{stroke-dashoffset:1}to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.hand-circle.draw path{animation:none}}
 </style></head><body>
@@ -346,11 +348,17 @@ let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);
  function loop(w,h){let k=0;const j=v=>((v+(Math.random()-.5)*4)*((k++%2)?h/42:w/100)).toFixed(1);return raw(j)}
  function raw(j){const sx=j(10),sy=j(24);return 'M'+sx+' '+sy+' C'+j(4)+' '+j(9)+' '+j(34)+' '+j(2)+' '+j(58)+' '+j(3)+' C'+j(86)+' '+j(4)+' '+j(99)+' '+j(13)+' '+j(97)+' '+j(24)+' C'+j(95)+' '+j(36)+' '+j(62)+' '+j(40)+' '+j(38)+' '+j(38)+' C'+j(14)+' '+j(36)+' '+j(1)+' '+j(29)+' '+j(5)+' '+j(18)+' C'+j(8)+' '+j(11)+' '+j(20)+' '+j(6)+' '+j(32)+' '+j(5)}
  function titleOf(el){if(el.matches('.faq-item')){const sm=el.querySelector('summary'),t=[...sm.childNodes].find(n=>n.nodeType===3&&n.textContent.trim());if(t){const r=document.createRange();r.selectNodeContents(t);return r}return sm}if(el.matches('.faq-type'))return el.querySelector('.hl');const h=el.matches('.route')?el.querySelector('.route-head h2'):el.matches('.station')?el.querySelector('.st-a h3'):null;if(!h)return null;const r=document.createRange();r.selectNodeContents(h);return r}
- function circle(el,animate){const old=el.querySelector(':scope>.hand-circle');if(old&&animate){old.remove()}const t=titleOf(el);if(!t)return;const tr=t.getBoundingClientRect(),br=el.getBoundingClientRect();if(!tr.width)return;if(old&&!animate){const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5);old.style.left=(tr.left-br.left-el.clientLeft-padX)+'px';old.style.top=(tr.top-br.top-el.clientTop-padY)+'px';old.style.width=(tr.width+padX*2)+'px';old.style.height=(tr.height+padY*2)+'px';return}
-  const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5),svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  svg.setAttribute('class','hand-circle'+(animate?' draw':''));const W=tr.width+padX*2,H=tr.height+padY*2;svg.setAttribute('viewBox','0 0 '+W.toFixed(1)+' '+H.toFixed(1));svg.setAttribute('aria-hidden','true');
-  svg.style.cssText='left:'+(tr.left-br.left-el.clientLeft-padX)+'px;top:'+(tr.top-br.top-el.clientTop-padY)+'px;width:'+(tr.width+padX*2)+'px;height:'+(tr.height+padY*2)+'px';
-  const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',loop(W,H));p.setAttribute('pathLength','1');svg.appendChild(p);el.appendChild(svg)}
+ // 有螢光筆的大標題（常見問題分類、手冊分類）用紅圈圈起來；字比較多的問題、手冊標題改成手畫底線（換行的每一行都畫）
+ function under(w,y){const r=v=>(v+(Math.random()-.5)*2.4).toFixed(1),x0=Math.random()*3,x1=w-Math.random()*3;return 'M'+x0.toFixed(1)+' '+r(y)+' C'+r(w*.3)+' '+r(y+2)+' '+r(w*.65)+' '+r(y-2)+' '+x1.toFixed(1)+' '+r(y+.5)+' q'+r(-5)+' '+r(2.5)+' '+r(-12)+' '+r(3.5)}
+ function circle(el,animate){const old=el.querySelector(':scope>.hand-circle');const t=titleOf(el);if(!t){old&&old.remove();return}const tr=t.getBoundingClientRect(),br=el.getBoundingClientRect();if(!tr.width)return;
+  const ox=br.left+el.clientLeft,oy=br.top+el.clientTop,line=el.matches('.faq-item,.station');let box,lines=[];
+  if(line){[...t.getClientRects()].forEach(r=>{if(r.width<2)return;const l=lines.find(x=>Math.abs(x.b-r.bottom)<4);if(l){l.l=Math.min(l.l,r.left);l.r=Math.max(l.r,r.right)}else lines.push({l:r.left,r:r.right,b:r.bottom})});box={x:tr.left-ox-4,y:tr.top-oy,w:tr.width+8,h:tr.height+8}}
+  else{const padX=Math.max(16,tr.height*.7),padY=Math.max(10,tr.height*.5);box={x:tr.left-ox-padX,y:tr.top-oy-padY,w:tr.width+padX*2,h:tr.height+padY*2}}
+  const geo=[box.x,box.y,box.w,box.h].map(v=>Math.round(v)).join(',');if(old&&!animate&&old.dataset.geo===geo)return;if(old)old.remove();
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('class','hand-circle'+(line?' hand-line':'')+(animate?' draw':''));svg.dataset.geo=geo;svg.setAttribute('viewBox','0 0 '+box.w.toFixed(1)+' '+box.h.toFixed(1));svg.setAttribute('aria-hidden','true');
+  svg.style.cssText='left:'+box.x+'px;top:'+box.y+'px;width:'+box.w+'px;height:'+box.h+'px';
+  const ds=line?lines.map(l=>({x:l.l-ox-box.x,d:under(l.r-l.l+4,l.b-oy-box.y+3)})):[{x:0,d:loop(box.w,box.h)}];
+  ds.forEach((o,i)=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',o.d);p.setAttribute('pathLength','1');if(o.x)p.setAttribute('transform','translate('+o.x.toFixed(1)+' 0)');if(line)p.style.animationDelay=(i*.35)+'s';svg.appendChild(p)});el.appendChild(svg)}
  function keyOf(el){if(el.matches('.faq-item'))return '#'+el.id;if(el.matches('.faq-type'))return '#'+el.querySelector('.faq-type-body').id;if(el.matches('.route'))return '.route-toggle[data-route="'+el.querySelector('.route-toggle').dataset.route+'"]';if(el.matches('.station'))return '.station[data-id="'+el.dataset.id+'"]';return null}
  function find(k){const n=k&&document.querySelector(k);return n&&n.closest('.faq-item,.faq-type,.route,.station')}
  function clear(){document.querySelectorAll('.last-open').forEach(x=>{x.classList.remove('last-open');x.querySelectorAll(':scope>.hand-circle').forEach(c=>c.remove())})}
