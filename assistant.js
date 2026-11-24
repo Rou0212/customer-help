@@ -362,7 +362,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   const label=region.name+(region.name.endsWith('區')?'':'區');
   if(doc){
    const page=endoIncomplete.test(norm(question))?incompletePages[doc.id]:null;
-   say(esc(city)+'屬於'+label+'。請確認要查的文件，點選後才顯示內容：<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="'+(page||'')+'">'+esc(doc.title)+'（'+esc(doc.kind)+'）</button>');
+   say(esc(city)+'屬於'+label+'。請確認要查的文件，點選後才顯示內容：<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="'+(page||'')+'">'+esc(doc.title)+(doc.title.includes(doc.kind)?'':'（'+esc(doc.kind)+'）')+'</button>');
   }else{
    say(esc(city)+'屬於'+label+'。網站目前沒有這區的指標文件，可從健保署業務組查詢。<a class="lc-official" href="https://www.nhi.gov.tw/ch/np-2334-1.html" target="_blank" rel="noopener noreferrer">健保署各區服務據點 ↗</a><small>如需協助，可輸入「轉人工」。</small>');
   }
