@@ -20,7 +20,7 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
 function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
- const appealText=n.replace(/[ｅＥ]/g,'e').replace(/[０-９]/g,c=>String(c.charCodeAt(0)-65296-48));
+ const appealText=n.normalize('NFKC');
  if(/(?:^|[^a-z0-9])e201(?![0-9])|附件資料未送達/.test(appealText))return {type:'appeal-e201'};
  const imageRoute=imageUploadRoute(q);if(imageRoute)return imageRoute;
  // A delayed result after submission is not a transfer failure.
