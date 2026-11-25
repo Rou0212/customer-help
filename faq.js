@@ -23,6 +23,7 @@ const FAQ_GROUPS=[
 {id:'aesthetic',name:'醫美相關報表',color:'#A55173'}];
 const OFFICIAL_URLS={'hca-unlock':'https://hca.nat.gov.tw/CertAction/PinAUnlock'};
 const FAQS=[
+{id:'self-pay-prescription-print',group:'emr',title:'怎麼開立及列印自費領藥處方箋？',tags:'自費藥 自費領藥 自費處方箋 自費處方簽 院內開藥 調劑方式',text:'在樂晴病歷內，將【調劑方式】改為【院內開藥】，即可列印自費領藥處方箋。'},
 {id:'diagnosis-certificate-bilingual',group:'emr',title:'有英文版診斷證明嗎？',tags:'英文診斷證明 英文版診斷證明 中英文診斷證明 雙語診斷證明 診斷證明列印',text:'系統內的診斷證明列印後就是中英文雙語格式，不需要另外選英文版。表單欄位有中英文，填入的內容不會因此自動翻譯。',img:'diagnosis-certificate-bilingual'},
 {"id": "copay-exemption-eligibility", "group": "reg", "title": "哪些人可免除健保部分負擔？", "tags": "免部分負擔 免收部分負擔 免除部分負擔 部分負擔身分 部分負擔身份 榮福 榮民 低收入戶 百歲 油症", "steps": ["持有重大傷病證明者、分娩者、山地離島地區就醫者。", "健保卡註記「榮」字（榮民、榮民遺眷家戶代表）或「福」字（低收入戶）者。", "百歲人瑞。", "3歲以下兒童、替代役役男、登記列管結核病患至指定特約醫院就醫、勞保職業傷病就醫者。", "油症患者（第一代門、急診及住院；第二代門、急診就醫）。"], "source": "內容由 Rou 提供核可。", "sourceUrl": "https://www.nhi.gov.tw/ch/cp-5158-91a83-2737-1.html", "sourceLabel": "健保署：免除所有部分負擔者"},
 {"id": "reasonable-volume-adjustment", "group": "nhi", "title": "樂晴的合理量是什麼？調升、調降要怎麼用？", "tags": "合理量 調升 調降 診察碼 掛牌醫師 支援醫師 20人次 申報前調整", "text": "合理量是在每月申報前調整的。\n\n預設值：\n\n- 掛牌醫師 → 用 20 人次內的診察碼\n- 支援醫師 → 用 20 人次以上的診察碼\n\n兩種調整方向：\n\n- 調升：掛牌醫師還有剩餘的合理量 → 可以把支援醫師的改成 20 人次內的診察碼\n- 調降：掛牌醫師本身申報就已經超過合理量 → 把超出的數量，從 20 人次內的診察碼改成 20 人次以上的診察碼\n\n主要要看的重點：合理量總數不要是負的。 調整完請確認總數沒有變成負值。", "source": "來源：益祥提供樂晴系統操作實務；Rou核可（2026-11-24，Issue #18）。"},

@@ -57,6 +57,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/預約|約診/.test(n)&&/超過|過了|已過|過期|昨天|已到及刪除/.test(n)&&/更改|修改|編輯|改內容|改時間|調整|改期|改資料/.test(n)){
   return {type:'topics',faqs:['batch-48'],docs:[]};
  }
+ if((/自費/.test(n)&&/開藥|開.*藥|領藥|處方|藥單|列印.*藥/.test(n)||/院內開藥/.test(n))&&!/新增藥品|建藥品|藥品新增/.test(n))return {type:'topics',faqs:['self-pay-prescription-print'],docs:[]};
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  // Refill with a missing diagnosis code is 9127, not the ICD9/ICD10 mapping workflow.
