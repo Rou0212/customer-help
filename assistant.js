@@ -40,6 +40,10 @@ function routeQuestion(q){const n=norm(q);const imageRoute=imageUploadRoute(q);i
  if(/補卡/.test(n)&&/icd(?:[-－]?10)?|傷病碼|診斷碼/.test(n)&&/未填|沒填|沒有填|漏填|未輸入|沒輸入|空白/.test(n)&&!/對照|轉換/.test(n)){
   return {type:'topics',faqs:['9127'],docs:[]};
  }
+ // 福保身分詢問與補卡後的收退費問題分開。
+ if(/^(?:(?:請問|想問))?(?:福保|健保卡福字|福字)(?:是|釋|是不是|算|代表)?低收(?:入戶)?(?:嗎|嘛)?$/.test(n)){
+  return {type:'topics',faqs:['copay-exemption-eligibility'],docs:[]};
+ }
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
