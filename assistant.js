@@ -44,6 +44,16 @@ function routeQuestion(q){const n=norm(q);const imageRoute=imageUploadRoute(q);i
  if(/^(?:(?:請問|想問))?(?:福保|健保卡福字|福字)(?:是|釋|是不是|算|代表)?低收(?:入戶)?(?:嗎|嘛)?$/.test(n)){
   return {type:'topics',faqs:['copay-exemption-eligibility'],docs:[]};
  }
+ // Creating a clinic user is distinct from granting VPN access or editing existing rights.
+ const newUserAction=/新增|新建|建立|加開|開通|開(?:一個|個)?帳(?:號|戶)|加入|加一個/;
+ const clinicRole=/醫師|醫生|護理師|護士|助理|員工|人員|櫃[檯台]|使用者|同仁/;
+ const explicitExternal=/vpn|google|gmail|line@|健保署|醫事卡|hca|健保網路服務/i;
+ const accountCreation=newUserAction.test(n)&&/帳[號戶]|使用者/.test(n);
+ const roleCreation=/新增|新建|建立|加一個/.test(n)&&clinicRole.test(n)
+  &&!/簽名|簽章|權限|排班|班表|約診|掛號|病歷|處置|專科|報表|群組|追蹤/.test(n);
+ if(!explicitExternal.test(n)&&(accountCreation||roleCreation)){
+  return {type:'topics',faqs:['leyizhi-user-list'],docs:[]};
+ }
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
