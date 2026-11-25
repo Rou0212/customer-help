@@ -74,6 +74,9 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
   return {type:'topics',faqs:['leyizhi-user-list'],docs:[]};
  }
  if(/(?:^|[^a-z0-9])1082(?![a-z0-9])|(?:寫卡|病歷寫入).*undefinedindexaction/.test(n.normalize('NFKC')))return {type:'topics',faqs:['1082'],docs:[]};
+ if(/初診(?:表單|問卷)/.test(n)&&/修改|更改|變更|編輯|調整|改內容|設定|新增.{0,8}(?:題|欄位)/.test(n)&&!/客源|顧客來源|撈取|解鎖|鎖住|簽名|裁切|患者.*已填|已填.*患者/.test(n)){
+  return {type:'topics',faqs:['initial-form-settings'],docs:[]};
+ }
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],

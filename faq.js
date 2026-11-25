@@ -107,6 +107,7 @@ const FAQS=[
 {id:'emr-host',group:'emr',title:'簽章程式打不開',tags:'簽章 程式 打不開 emr主機',text:'到機房找貼有【EMR 或簽章主機】貼紙的主機，確認有沒有正常開機，或將它重新開機。',doc:'emr-sign'},
 {id:'emr-error',group:'emr',title:'簽章完成後跳出錯誤視窗',tags:'簽章錯誤 視窗 emr 拋轉 處置內容',steps:['跳出的視窗會列出需要調整的患者名字和病歷日期','檢查病歷裡所有處置代碼的處置內容是否填寫完整','空白沒帶入的要重新帶入，完成後重新拋轉簽章'],doc:'emr-sign'},
 {id:'emr-transfer',group:'emr',title:'EMR 拋轉錯誤',tags:'拋轉錯誤 emr 患者資料 特殊符號 緊急聯絡人',text:'先檢查患者基本資料是否有填錯、特殊符號，或緊急聯絡人資料有問題。',doc:'emr-sign'},
+{id:'initial-form-settings',group:'settings',title:'樂易智：修改初診表單內容',tags:'初診表單 修改表單 編輯表單 問卷設定',text:'請由有權限的人員到【樂易智 → 項目設定 → 初診表單】查看表單設定。若看不到此選項，請由診所管理者確認群組權限。'},
 {id:'form-unlock',group:'emr',title:'平板上的初診表單打不開（被鎖住）',tags:'初診表單 解鎖 平板',text:'在電腦點選這位患者的初診表單並解鎖，按表單中的【取消】，再回平板重新開啟。'},
 {id:'form-cropped',group:'emr',title:'同意書或初診表單存檔後被裁切',tags:'同意書 裁切 平板 放大',text:'只能重新填寫一次。平板畫面如果有放大，會以當時的比例存成圖檔；請患者簽名後先把畫面縮回原本大小再存檔。'},
 // ---- 電腦與設備 ----
