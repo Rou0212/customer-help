@@ -73,6 +73,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(!explicitExternal.test(n)&&(accountCreation||roleCreation)){
   return {type:'topics',faqs:['leyizhi-user-list'],docs:[]};
  }
+ if(/(?:^|[^a-z0-9])1082(?![a-z0-9])|(?:寫卡|病歷寫入).*undefinedindexaction/.test(n.normalize('NFKC')))return {type:'topics',faqs:['1082'],docs:[]};
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
