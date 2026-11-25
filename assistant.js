@@ -42,7 +42,8 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
  if(/報價|合約|簽約|續約/.test(n)||(!/醫療費用|申報費用|日結費用|收據|掛號費|診察費|部分負擔/.test(n)&&/系統.{0,12}(?:價格|價錢|多少錢|收費|費用)|(?:價格|價錢|多少錢|收費|費用).{0,12}系統|^(?:請問)?(?:價格|價錢|多少錢|收費|費用)(?:是多少|多少|怎麼算|嗎)?$/.test(n)))return {type:'human'};
  if(/(?:現在|目前|大家).*(?:雲端|健保系統).*(?:異常|問題|不能|無法)|(?:雲端|健保系統).*(?:目前|現在).*(?:異常|問題)/.test(n))return {type:'human',message:'目前沒有可核對的即時服務狀態，請由官方人工客服確認；不能以過往異常紀錄判定現在的狀態。'};
- if(/申覆/.test(n)&&/錯誤|失敗|傳不上|傳不出|不能上傳|無法上傳|壓縮檔/.test(n)){
+ if(/申覆/.test(n)&&/錯誤|失敗|有問題|出問題|異常|不成功|傳不上|傳不出|不能上傳|無法上傳|壓縮檔/.test(n)){
+  if(/e300/.test(appealText))return {type:'topics',faqs:['e300'],docs:[]};
   if(/e465|壓縮檔/.test(appealText))return {type:'topics',faqs:['e465'],docs:[]};
   return {type:'appeal-error'};
  }
@@ -500,7 +501,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let imageUploadPending=false;
  const appealChoice=(value,label)=>'<button type="button" class="lc-choice" data-appeal-error="'+value+'">'+label+'</button>';
  function chooseAppealError(){
-  say('請選擇申覆畫面上的錯誤內容：'+appealChoice('e201','E201：附件資料未送達')+appealChoice('e465','E465／壓縮檔錯誤')+appealChoice('other','其他錯誤／不確定'));
+  say('請選擇申覆畫面上的錯誤內容：'+appealChoice('e201','E201：附件資料未送達')+appealChoice('e300','E300')+appealChoice('e465','E465／壓縮檔錯誤')+appealChoice('other','其他錯誤／不確定'));
  }
  function chooseAppealPopup(){
   say('請先查看共通傳輸平台（小綠人）是否跳出視窗，並確認視窗上的文字：'+appealChoice('port','讀卡機 COM Port 尚未設定')+appealChoice('space','資料庫空間不足')+appealChoice('other','沒有跳出視窗／文字不同'));
@@ -673,7 +674,8 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
    const verify='<p>處理完成後，請確認申覆附件是否已上傳成功；若確認尚未上傳，才需要重新上傳。</p>';
    switch(appeal.dataset.appealError){
     case 'e201':chooseAppealPopup();break;
-    case 'e465':say(faqHtml(FQ.find(f=>f.id==='e465')));break;
+    case 'e300':
+    case 'e465':say(faqHtml(FQ.find(f=>f.id===appeal.dataset.appealError)));break;
     case 'port':{
      const src=BASE+'images/faq/e201-com-port.jpg';
      say('請依圖在小綠人的【系統設定】確認讀卡機連接 COM Port。<a class="lc-img" href="'+src+'" target="_blank" rel="noopener"><img src="'+src+'" alt="讀卡機 COM Port 設定圖卡"></a>'+verify);
