@@ -248,6 +248,20 @@ function isWaitCommand(q){
  const short=q.replace(/[\s，。？！、,.?!:：;；「」『』～~…！]/g,'');
  return /^(?:(?:請(?:你)?|麻煩(?:你)?|先|再))*(?:等等(?:一下)?|等一下(?:下)?|等一等|等我一下|稍等(?:一下)?)(?:我)?(?:喔|哦|唷|噢|啦|吧)?$/.test(short);
 }
+// Only a recognized change of topic drops the earlier batch. Symptom corrections
+// keep its device and error code; additive statements are not corrections.
+function applyBatchCorrection(parts, question){
+ const match=question.match(/^不是(?![只僅單光])\s*([^，,。！？!?；;\r\n]{1,40}?)(?:[，,；;]\s*(?:而?是|我指的是|我的意思是)|\s*而?是)\s*([^，,。！？!?；;\s][\s\S]*)$/);
+ if(!match)return [...parts,question];
+ const [,rejected,replacement]=match;
+ const topics=[/讀卡機|健保卡|取卡|寫卡|讀卡/,/印表機|列表機/,/合理量|合理門診點數/,/申報/,/pano|x光|醫療影像/i,/密碼/,/掛號/,/轉診/,/電子簽章/];
+ const topicOf=value=>topics.findIndex(pattern=>pattern.test(value));
+ const previous=topicOf(rejected), next=topicOf(replacement);
+ if(previous!==-1&&next!==-1&&previous!==next)return [replacement];
+ const incorrect=rejected.trim();
+ const retained=parts.map(part=>part.replaceAll(incorrect,'').trim()).filter(Boolean);
+ return [...retained,replacement];
+}
 // Each flush consumes its text before routing. No question text survives into a later batch.
 function createQueryBatch({run,start=()=>{},pending=()=>{},idleWait=()=>{},clock={now:()=>Date.now(),set:(f,n)=>setTimeout(f,n),clear:t=>clearTimeout(t)}}){
  let parts=[],first=null,deadline=0,timer=null,waiting=false;
@@ -267,7 +281,7 @@ function createQueryBatch({run,start=()=>{},pending=()=>{},idleWait=()=>{},clock
   const hold=isWaitCommand(q);
   if(hold&&!parts.length){idleWait();return 'idle-wait'}
   if(!parts.length){first=clock.now();start()}
-  if(!hold)parts.push(q);
+  if(!hold)parts=applyBatchCorrection(parts,q);
   waiting=hold;deadline=Math.min(clock.now()+(hold?15000:5000),first+60000);
   cancel();update(hold?'wait':'input');return hold?'wait':'input';
  }

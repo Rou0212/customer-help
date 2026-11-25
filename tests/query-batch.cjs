@@ -23,3 +23,12 @@ f=fixture();f.batch.submit('申報');for(let i=0;i<14;i++){f.tick(4000);f.batch.
 f=fixture();f.batch.submit('先前問題');f.batch.submit('等等');f.batch.reset();f.tick(60000);assert.equal(f.out.length,0);assert.equal(f.jobs,0);assert.equal(f.states.at(-1),null);
 f.batch.submit('新問題內容');assert.equal(f.batch.flush(),true);assert.deepEqual(f.out,['新問題內容']);assert.equal(f.starts,2);
 console.log('PASS real-second countdown, debounce reset, isolated batches/codes, wait15/repeat/resume5, idle wait, immediate, cap60 and cancellation');
+
+for(const correction of ['不是申報，是讀卡機','不是申報是讀卡機','不是申報而是讀卡機']){
+ f=fixture();f.batch.submit('健保申報');f.tick(4000);f.batch.submit(correction);f.batch.submit('完全沒反應');f.tick(5000);
+ assert.deepEqual(f.out,['讀卡機\n完全沒反應'],correction);
+}
+f=fixture();f.batch.submit('讀卡機出現4043');f.batch.submit('不是讀不到卡，是寫卡失敗');f.tick(5000);
+assert.deepEqual(f.out,['讀卡機出現4043\n寫卡失敗']);
+f=fixture();f.batch.submit('讀卡機');f.batch.submit('不是只有讀卡機，是連印表機也沒反應');f.batch.flush();
+assert.deepEqual(f.out,['讀卡機\n不是只有讀卡機，是連印表機也沒反應']);
