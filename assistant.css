@@ -166,3 +166,10 @@ body.modal-open .lc-fab-wrap{display:none}
 @media(prefers-reduced-motion:no-preference){.lc-root.lc-sleeping .lc-asleep{transform-origin:60px 110px;animation:lc-sleep-breathe 3.2s ease-in-out infinite}.lc-snot{transform-origin:57px 93px;animation:lc-snot 2.6s ease-in-out infinite}}
 @keyframes lc-sleep-breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.035)}}
 @keyframes lc-snot{0%,100%{transform:scale(.55)}55%{transform:scale(1.15)}}
+
+/* Native file input covers the image icon; no synthetic click or hidden picker. */
+.lc-root .lc-pic{position:relative;overflow:hidden}
+.lc-root .lc-pic .lc-file{display:block;position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer}
+.lc-root .lc-pic:focus-within{outline:2px solid #526eac;outline-offset:2px}
+.lc-root .lc-pic:has(.lc-file:disabled){opacity:.48;cursor:not-allowed}
+.lc-root .lc-file:disabled{cursor:not-allowed}
