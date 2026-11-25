@@ -18,7 +18,7 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
  return null;
 }
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
-function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|無法(?:開啟|打開)|不能(?:開啟|打開)|開啟失敗/.test(n);
+function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
  const imageRoute=imageUploadRoute(q);if(imageRoute)return imageRoute;
  // 匯出位置必須先確認系統與動作對象，不以泛圖片字詞連到影像上傳或牙周表。
