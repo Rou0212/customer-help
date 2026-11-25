@@ -57,7 +57,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/預約|約診/.test(n)&&/超過|過了|已過|過期|昨天|已到及刪除/.test(n)&&/更改|修改|編輯|改內容|改時間|調整|改期|改資料/.test(n)){
   return {type:'topics',faqs:['batch-48'],docs:[]};
  }
- if((/自費/.test(n)&&/開藥|開.*藥|領藥|處方|藥單|列印.*藥/.test(n)||/院內開藥/.test(n))&&!/新增藥品|建藥品|藥品新增/.test(n))return {type:'topics',faqs:['self-pay-prescription-print'],docs:[]};
+ if((/自費/.test(n)&&/開藥|開.*藥|領藥|處方|藥單|列印.*藥|藥.*印|病歷.*新增.*藥/.test(n)||/院內開藥/.test(n))&&!/新增藥品|建藥品|藥品新增/.test(n))return {type:'topics',faqs:['self-pay-prescription-print'],docs:[]};
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  // Refill with a missing diagnosis code is 9127, not the ICD9/ICD10 mapping workflow.
@@ -96,7 +96,8 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
   return {type:'topics',faqs:['od-rate'],docs:[]};
  }
  if(/診[斷断]證明|certificateofdiagnosis/.test(n)&&/英文|英語|雙語|中英|english/.test(n))return {type:'topics',faqs:['diagnosis-certificate-bilingual'],docs:[]};
- if(/優待(?:身[分份]|項目)/.test(n)&&/更改|更動|修改|編輯|刪除|新增|調整|變更|設定|改|刪/.test(n)&&!/補卡|優待部分負擔已經超過|沒(?:有)?帶入/.test(n))return {type:'topics',faqs:['ley-discount'],docs:[]};
+ if(/(?:優待|優惠)(?:身[分份]|項目)/.test(n)&&/更改|更動|修改|編輯|刪除|新增|調整|變更|設定|改|刪/.test(n)&&!/補卡|優待部分負擔已經超過|沒(?:有)?帶入/.test(n))return {type:'topics',faqs:['ley-discount'],docs:[]};
+ if(/新增|建立|建檔/.test(n)&&/藥品/.test(n)&&!/套餐|處方|領藥/.test(n))return {type:'topics',faqs:['ley-drug'],docs:[]};
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
@@ -107,7 +108,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  [/(?:(?:他院|外院|別家|其他院所|其他診所).*(?:處置|申報|警告|警示|黃框)|(?:處置|警告|警示|黃框).*(?:他院|外院|別家|其他院所|其他診所))/,['other-clinic-procedure-warning'],[]],
  [/列表機|印表機.*連不上/,['printer'],[]],
  [/讀取.*ic醫令.*沒有.*就醫紀錄/i,['ic-vs-cloud'],[]],
- [/(?=.*(?:ic(?:卡|醫令)?|健保卡))(?=.*雲端(?:的)?(?:牙科|藥歷|醫令))(?=.*(?:讀|紀錄|看|差異|不一樣|不同))/,['ic-vs-cloud'],[]],
+ [/(?=.*(?:讀ic|ic卡|ic醫令|健保卡))(?=.*雲端)(?=.*(?:讀|紀錄|看|差異|不一樣|不同))/,['ic-vs-cloud'],[]],
  [/抽審.*p3601.*自評表/i,['batch-18'],[]],
  [/多生牙.*牙位/,['batch-25'],['tooth-correction']],
  [/不屬於同一人/,['batch-08'],[]],
@@ -166,6 +167,8 @@ const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|�
 const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
 function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='topics'?faqPool.filter(p=>route.faqs.includes(p.f.id)).map(p=>({f:p.f,score:100})):[];const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
+ if(p.f.id==='dental-daily-cash'&&!/帳|日結|實收/.test(n))return {f:p.f,score:0};
+ if(p.f.id==='vpn-queue'&&/上傳失敗|送出失敗|無法上傳|不能上傳|傳不上|傳不出|錯誤/.test(n))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
  if(p.f.matchAny){if(!p.f.matchAny.some(t=>n.includes(norm(t))))return {f:p.f,score:0};s+=30;}
  const required={'copay-exemption-eligibility':/部分負擔|榮福/,'reasonable-volume-adjustment':/合理量|合理門診點數/,'referral-clinic-not-found':/轉診/,'telecom-outage-registration':/中華電信|電信|網路/,'id-change-refill-card':/身分證|身份證|證號/,'patient-name-question-mark':/姓名|名字|特殊字|生僻字|罕用字/,'other-clinic-procedure-warning':/(?:他院|外院|別家|其他院所|其他診所)/,'diag-fee':/診察碼|診察費/,'batch-36':/打不開|api|無法開啟|主機/i,'user-pw':/密碼/,'progress-1-7':/進度/,'receipt-stamp-image':/收據|總繳章|戳章|印花稅.*章/,'supplement-claim-upload':/補報/,'supplement-review-upload':/補報/,'consent-signature-missing':/簽名|png/i};
