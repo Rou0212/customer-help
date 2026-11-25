@@ -53,6 +53,10 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  }
  const missing=/這個|這裡|這邊|這兩個/.test(n)&&/跳出|出現|問題|代碼|重設|讀卡機|ic上傳|檢核/.test(n)&&!/(?:[a-z]?\d{4}|不屬於同一人)/i.test(n);
  if(missing||/怎麼不能寫卡|不能寫卡怎麼|上傳檢核.*錯誤|等了.*分鐘.*上傳/.test(n))return {type:'clarify',message:'請先補充發生問題的功能／操作步驟，以及畫面上的完整錯誤碼或訊息文字（請勿提供患者個資）。若是上傳，請說明是 IC 就醫資料、X 光影像、申報或電子簽章；目前資訊不足，不能直接判定原因。'};
+ // Editing a past appointment is distinct from asking why an appointment disappeared.
+ if(/預約|約診/.test(n)&&/超過|過了|已過|過期|昨天|已到及刪除/.test(n)&&/更改|修改|編輯|改內容|改時間|調整|改期|改資料/.test(n)){
+  return {type:'topics',faqs:['batch-48'],docs:[]};
+ }
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  // Refill with a missing diagnosis code is 9127, not the ICD9/ICD10 mapping workflow.
