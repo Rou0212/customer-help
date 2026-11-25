@@ -22,6 +22,10 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
  const appealText=n.normalize('NFKC');
  if(/(?:^|[^a-z0-9])e201(?![0-9])|附件資料未送達/.test(appealText))return {type:'appeal-e201'};
+ // The database filename survives common OCR mistakes such as E1I and 資畔庫.
+ const eiiWarning=/(?:小綠人|共[同通]傳輸平台|nhi[_-]?e[i1l]{2}mdb)/.test(n);
+ const eiiSpace=/(?:空間|容量).{0,12}(?:不足|不夠|不夠用|滿|不到10m|剩下?不到10m)|(?:滿了|滿ㄌ)/.test(n);
+ if(eiiWarning&&eiiSpace)return {type:'topics',faqs:['clear-eii'],docs:[]};
  const imageRoute=imageUploadRoute(q);if(imageRoute)return imageRoute;
  // A delayed result after submission is not a transfer failure.
  const reviewUpload=/(?:抽審|申報)/.test(n)&&/(?:上傳|傳了|傳很久|傳完|送出|送件)/.test(n);
