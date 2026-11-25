@@ -20,6 +20,8 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
 function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
+ const appealText=n.replace(/[ｅＥ]/g,'e').replace(/[０-９]/g,c=>String(c.charCodeAt(0)-65296-48));
+ if(/(?:^|[^a-z0-9])e201(?![0-9])|附件資料未送達/.test(appealText))return {type:'appeal-e201'};
  const imageRoute=imageUploadRoute(q);if(imageRoute)return imageRoute;
  // A delayed result after submission is not a transfer failure.
  const reviewUpload=/(?:抽審|申報)/.test(n)&&/(?:上傳|傳了|傳很久|傳完|送出|送件)/.test(n);
@@ -40,6 +42,10 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/掛號費/.test(n)&&/調整|改/.test(n))return {type:'topics',faqs:['batch-38'],docs:[]};
  if(/報價|合約|簽約|續約/.test(n)||(!/醫療費用|申報費用|日結費用|收據|掛號費|診察費|部分負擔/.test(n)&&/系統.{0,12}(?:價格|價錢|多少錢|收費|費用)|(?:價格|價錢|多少錢|收費|費用).{0,12}系統|^(?:請問)?(?:價格|價錢|多少錢|收費|費用)(?:是多少|多少|怎麼算|嗎)?$/.test(n)))return {type:'human'};
  if(/(?:現在|目前|大家).*(?:雲端|健保系統).*(?:異常|問題|不能|無法)|(?:雲端|健保系統).*(?:目前|現在).*(?:異常|問題)/.test(n))return {type:'human',message:'目前沒有可核對的即時服務狀態，請由官方人工客服確認；不能以過往異常紀錄判定現在的狀態。'};
+ if(/申覆/.test(n)&&/錯誤|失敗|傳不上|傳不出|不能上傳|無法上傳|壓縮檔/.test(n)){
+  if(/e465|壓縮檔/.test(appealText))return {type:'topics',faqs:['e465'],docs:[]};
+  return {type:'appeal-error'};
+ }
  const missing=/這個|這裡|這邊|這兩個/.test(n)&&/跳出|出現|問題|代碼|重設|讀卡機|ic上傳|檢核/.test(n)&&!/(?:[a-z]?\d{4}|不屬於同一人)/i.test(n);
  if(missing||/怎麼不能寫卡|不能寫卡怎麼|上傳檢核.*錯誤|等了.*分鐘.*上傳/.test(n))return {type:'clarify',message:'請先補充發生問題的功能／操作步驟，以及畫面上的完整錯誤碼或訊息文字（請勿提供患者個資）。若是上傳，請說明是 IC 就醫資料、X 光影像、申報或電子簽章；目前資訊不足，不能直接判定原因。'};
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
@@ -492,6 +498,13 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   say('請先確認要查的主題，點選後才顯示內容：'+faqs.map(faqChoice).join('')+(doc?'<button type="button" class="lc-choice" data-indicator-doc="'+esc(doc.id)+'" data-indicator-page="">'+esc(doc.title)+'（'+esc(doc.kind)+'；含新特約規範）</button>':'')+(!doc&&region?.name!=='臺北'?' <p>本站目前沒有'+esc((region?.name||clinicCity).replace(/區$/,''))+'區的新特約管控資料，不套用其他分區規定。可輸入「轉人工」協助確認。</p>':''));
  }
  let imageUploadPending=false;
+ const appealChoice=(value,label)=>'<button type="button" class="lc-choice" data-appeal-error="'+value+'">'+label+'</button>';
+ function chooseAppealError(){
+  say('請選擇申覆畫面上的錯誤內容：'+appealChoice('e201','E201：附件資料未送達')+appealChoice('e465','E465／壓縮檔錯誤')+appealChoice('other','其他錯誤／不確定'));
+ }
+ function chooseAppealPopup(){
+  say('請先查看共通傳輸平台（小綠人）是否跳出視窗，並確認視窗上的文字：'+appealChoice('port','讀卡機 COM Port 尚未設定')+appealChoice('space','資料庫空間不足')+appealChoice('other','沒有跳出視窗／文字不同'));
+ }
  function chooseXrayOpen(){
   say('請問 X 光在哪裡打不開？<button type="button" class="lc-choice" data-xray-open="system">樂晴系統內打不開，桌面可以打開</button><button type="button" class="lc-choice" data-xray-open="both">樂晴系統和桌面都打不開</button>');
  }
@@ -501,7 +514,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let accountClinicPending=false;
  function chooseAccountClinic(){accountClinicPending=true;say('請問是牙科院所還是非牙科？<button type="button" class="lc-choice" data-account-clinic="dental">牙科院所</button><button type="button" class="lc-choice" data-account-clinic="other">非牙科院所</button>');}
  function showAccountClinic(kind){accountClinicPending=false;const f=FQ.find(x=>x.id===(kind==='dental'?'dental-daily-cash':'report-daily-receipts'));if(f)say(faqHtml(f));}
- function query(q){lastQuestion=q;const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route?.type==='xray-open'){countQuestion(clinicCity,'X光開啟情境確認');chooseXrayOpen();return}if(route?.type==='image-upload'){countQuestion(clinicCity,'醫療影像上傳情境確認');chooseImageUpload();return}if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!route&&!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
+ function query(q){lastQuestion=q;const accountReply=norm(q);if(accountClinicPending&&/^(?:我是|我們是|是)?(?:非牙科|牙科)(?:院所|診所)?$/.test(accountReply)){showAccountClinic(accountReply.includes('非牙科')?'other':'dental');return}accountClinicPending=false;if(humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const route=routeQuestion(q);if(route?.type==='appeal-error'||route?.type==='appeal-e201'){countQuestion(clinicCity,'申覆上傳錯誤');if(route.type==='appeal-e201')chooseAppealPopup();else chooseAppealError();return}if(route?.type==='xray-open'){countQuestion(clinicCity,'X光開啟情境確認');chooseXrayOpen();return}if(route?.type==='image-upload'){countQuestion(clinicCity,'醫療影像上傳情境確認');chooseImageUpload();return}if(route&&route.type!=='topics'){countQuestion(clinicCity,route.type==='human'?'人工客服':'補充操作情境');say((route.message?esc(route.message):'')+(route.type==='human'?supportHtml(pet.name):''));return}if(isAccountLookup(accountReply)){countQuestion(clinicCity,'當天帳院所分流');chooseAccountClinic();return}if(/^(?:(?:請|我要|我想|幫我|可以|怎麼|如何))*(?:人工客服|轉人工(?:客服)?|找真人|找客服|聯絡客服|需要人工(?:客服)?|官方line@?|line@|客服電話)(?:嗎|在哪裡?|是多少)?$/i.test(norm(q))){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}const policy=policyHit();if(!policy&&norm(q).includes('新特約')){countQuestion(clinicCity,'新特約');chooseNewContract(q);return}if(!route&&!policy&&!(/報表.*(?:不見|看不到|權限)|(?:ENDO|牙統)未完成.*(?:看不到|不見)/i.test(q))&&(namedIndicator(q)||regionalIndicatorQuestion(q))){countQuestion(clinicCity,'分區管控指標');chooseIndicatorCity(clinicCity,q);return}if(policy&&policy.status!=='found'){countQuestion(clinicCity,'牙科支付標準');say(policy.status==='ambiguous'?'這組牙科處置代碼有多個尾碼，請輸入完整代碼再查詢。':'在目前的支付標準表找不到「'+esc(policy.input)+'」。請核對完整代碼（含尾碼）後再查；個案申報請由人工客服協助確認。');return}const r=rank(q),fr=policy?faqPool.filter(p=>matchesNhiProcedureFaq(policy,p.f)).map(p=>({f:p.f,score:100})):rankFaq(q).filter(x=>x.f.group!=='taipei'||indicatorRegions.find(r=>r.cities.includes(clinicCity))?.name==='臺北');
   if(!fr.length&&!r.length&&humanRequest(q)){countQuestion(clinicCity,'人工客服');say(supportHtml(pet.name));return}
   countQuestion(clinicCity,policy?'牙科支付標準':questionCategory(fr[0]?.f,r[0]?.d));
   if(!fr.length&&!r.length){say(('嗯…'+pet.name+'還不太確定你遇到的是哪個問題。請將功能、操作步驟與錯誤代碼一起輸入，我再幫你找找看！')+supportHtml(pet.name));return}
@@ -654,6 +667,23 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  root.addEventListener('click',e=>{
   if(e.target.closest('button:disabled,[aria-disabled="true"]')){e.preventDefault();return}const ib=e.target.closest('[data-indicator-doc]');if(ib){const region=indicatorRegions.find(item=>item.cities.includes(clinicCity));if(!region)return;if(region.doc!==ib.dataset.indicatorDoc){chooseIndicatorCity(clinicCity,lastQuestion);return}const page=Number(ib.dataset.indicatorPage)||null;showIndicatorDocument(region.doc,region.name+(region.name.endsWith('區')?'':'區'),page===incompletePages[region.doc]?page:null);return}
   const tb=e.target.closest('[data-taipei-source]');if(tb){const region=indicatorRegions.find(r=>r.cities.includes(clinicCity));if(region?.name!=='臺北'){chooseIndicatorCity(clinicCity,lastQuestion);return}const source=FQ.find(f=>f.id==='taipei-control-14');if(source?.sourceUrl)say('臺北分區官方原文；請核對實際指標及適用期間。<a class="lc-official" href="'+esc(source.sourceUrl.replace(/#.*$/,''))+'" target="_blank" rel="noopener noreferrer">臺北區管控作業指標規範 PDF ↗</a>');return}
+  const appeal=e.target.closest('[data-appeal-error]');
+  if(appeal){
+   invalidateChoices();
+   const verify='<p>處理完成後，請確認申覆附件是否已上傳成功；若確認尚未上傳，才需要重新上傳。</p>';
+   switch(appeal.dataset.appealError){
+    case 'e201':chooseAppealPopup();break;
+    case 'e465':say(faqHtml(FQ.find(f=>f.id==='e465')));break;
+    case 'port':{
+     const src=BASE+'images/faq/e201-com-port.jpg';
+     say('請依圖在小綠人的【系統設定】確認讀卡機連接 COM Port。<a class="lc-img" href="'+src+'" target="_blank" rel="noopener"><img src="'+src+'" alt="讀卡機 COM Port 設定圖卡"></a>'+verify);
+     break;
+    }
+    case 'space':say(faqHtml(FQ.find(f=>f.id==='clear-eii'))+verify);break;
+    default:say('如果沒有視窗或顯示其他錯誤，請洽真人客服協助確認。'+supportHtml(pet.name));
+   }
+   return;
+  }
   const xr=e.target.closest('[data-xray-open]');
   if(xr){
    invalidateChoices();
