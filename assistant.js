@@ -21,6 +21,12 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
 function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
  const imageRoute=imageUploadRoute(q);if(imageRoute)return imageRoute;
+ // A delayed result after submission is not a transfer failure.
+ const reviewUpload=/(?:抽審|申報)/.test(n)&&/(?:上傳|傳了|傳很久|傳完|送出|送件)/.test(n);
+ const delayedResult=/排隊|等(?:了)?很久|(?:上?傳|等)(?:了)?(?:很久|[0-9０-９一二三四五六七八九十]+(?:分鐘|小時))|查不到|還沒(?:好|結果|完成)|沒有結果|沒結果|未出結果/.test(n);
+ if(reviewUpload&&delayedResult&&!/上傳失敗|送出失敗|無法上傳|不能上傳|傳不上|傳不出|錯誤|錯誤碼|擷取|電子簽章|x光|ｘ光|pano/.test(n)){
+  return {type:'topics',faqs:['vpn-queue'],docs:[]};
+ }
  // 匯出位置必須先確認系統與動作對象，不以泛圖片字詞連到影像上傳或牙周表。
  const imageObject=/圖片|照片|圖檔|影像/.test(n), exportAction=/匯出|導出|下載/.test(n), locationAsk=/存|儲|位置|哪|去/.test(n);
  if(n.includes('樂易秀')&&imageObject&&(exportAction||locationAsk))return {type:'topics',faqs:['leyshow-image-export'],docs:[]};
