@@ -96,6 +96,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
   return {type:'topics',faqs:['od-rate'],docs:[]};
  }
  if(/診[斷断]證明|certificateofdiagnosis/.test(n)&&/英文|英語|雙語|中英|english/.test(n))return {type:'topics',faqs:['diagnosis-certificate-bilingual'],docs:[]};
+ if(/優待(?:身[分份]|項目)/.test(n)&&/更改|更動|修改|編輯|刪除|新增|調整|變更|設定|改|刪/.test(n)&&!/補卡|優待部分負擔已經超過|沒(?:有)?帶入/.test(n))return {type:'topics',faqs:['ley-discount'],docs:[]};
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
