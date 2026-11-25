@@ -94,6 +94,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/補牙|填補|充填|重補率|乳牙|恆牙|恒牙/.test(n)&&/再報|再申報|重複申報|重新申報|多久|一年|兩年|重補率/.test(n)&&!/窩溝|封填|根管|拔牙|洗牙|塗氟|[0-9０-９]{5}/.test(n)){
   return {type:'topics',faqs:['od-rate'],docs:[]};
  }
+ if(/診[斷断]證明|certificateofdiagnosis/.test(n)&&/英文|英語|雙語|中英|english/.test(n))return {type:'topics',faqs:['diagnosis-certificate-bilingual'],docs:[]};
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
