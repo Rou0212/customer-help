@@ -25,3 +25,6 @@ for(const [q,id] of [['申報上傳失敗等很久','vpn-queue'],['雲端的牙�
 assert(isAccountLookup('牙科診所當天的現金帳在哪看'));
 for(const [q,type] of [['申覆有問題','appeal-error'],['Ｅ２０１','appeal-e201'],['X光不能用','xray-open'],['X光上傳失敗','image-upload']])assert.equal(routeQuestion(q)?.type,type,q);
 console.log('PASS 23 cross-intent cases');
+for(const q of ['簡訊發送不出但有通數','簡訊有通數卻發送失敗','簡訊發不出去','簡訊通數不足','簡訊具名怎麼寫'])assert.equal(rankFaq(q)[0]?.f.id,'batch-49',q);
+assert.equal(rankFaq('要發送生日簡訊給當月壽星，要如何操作？')[0]?.f.id,'report-birthday-sms');
+assert.notEqual(rankFaq('LINE不能發訊息')[0]?.f.id,'batch-49');

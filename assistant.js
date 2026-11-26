@@ -107,6 +107,7 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
   if(/終止|恢復課程/.test(n))return {type:'topics',faqs:['treatment-stop'],docs:[]};
   if(/退款|退費|退刷/.test(n))return {type:'topics',faqs:['treatment-payment'],docs:[]};
  }
+ if(/簡訊/.test(n)&&/發不[出去]|發送失敗|無法發送|不能發送|有通數.*(?:失敗|沒發)|通數不足|簡訊具名/.test(n))return {type:'topics',faqs:['batch-49'],docs:[]};
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
