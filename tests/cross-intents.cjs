@@ -14,6 +14,9 @@ const cases=[
  ['IC卡讀不到雲端看得到','ic-vs-cloud'],
  ['抽審傳了四十分鐘','vpn-queue'],
  ['系統沒有２５００４Ｃ','ley-procedure-add'],
+ ['您好、想請教看診過的這些預約資料項目的顏色可以改嗎？如果可以是在哪邊更改呢？','appointment-arrival-color'],
+ ['到診顏色怎麼改','appointment-arrival-color'],
+ ['到枕顏色','appointment-arrival-color'],
  ['預約時間超過了要更改內容 無法點進去修改','batch-48'],
  ['患者換身分證怎麼調整','patient-id-edit'],
  ['欠卡患者換身分證無法補卡','id-change-refill-card'],
@@ -28,3 +31,5 @@ console.log('PASS 23 cross-intent cases');
 for(const q of ['簡訊發送不出但有通數','簡訊有通數卻發送失敗','簡訊發不出去','簡訊通數不足','簡訊具名怎麼寫'])assert.equal(rankFaq(q)[0]?.f.id,'batch-49',q);
 assert.equal(rankFaq('要發送生日簡訊給當月壽星，要如何操作？')[0]?.f.id,'report-birthday-sms');
 assert.notEqual(rankFaq('LINE不能發訊息')[0]?.f.id,'batch-49');
+
+for(const q of ['預設預約背景色怎麼改','怎麼改休診顏色']) assert.notEqual(rankFaq(q)[0]?.f.id,'appointment-arrival-color',q);
