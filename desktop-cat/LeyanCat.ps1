@@ -76,6 +76,8 @@ public class LeyanCatPet : Form
     const int PLAY_TICKS = 400;
     // 跑滾輪：inWheel＝已經進到滾輪裡；wheelBoost＝動滑鼠、點牠累積的速度
     bool inWheel = false; double wheelBoost = 0; Point lastCur;
+    // 抓起來／掉下來：swing＝被拎著時的擺動角度，dragVx＝拖曳的水平速度，landTicks／landImpact＝落地壓扁彈跳
+    double swing = 0, swingV = 0, dragVx = 0; int lastDragX = 0, landTicks = 0, fallTicks = 0; double landImpact = 0;
 
     public LeyanCatPet(string url, string script)
     {
@@ -428,13 +430,28 @@ public class LeyanCatPet : Form
         }
         Rectangle wa = Screen.FromPoint(new Point(Left + W / 2, Top + H / 2)).WorkingArea;
         int ground = GroundTop(wa);
-        if (dragging) { Render(); return; }
+        if (bubbleTicks > 0 && (dragging || falling)) bubbleTicks--;
+        if (dragging)
+        {
+            // 擺盪：往右拖身體往左甩，放慢後慢慢晃回來
+            swingV += (-dragVx * 1.6 - swing) * 0.18; swingV *= 0.82; swing += swingV;
+            swing = Math.Max(-38, Math.Min(38, swing)); dragVx *= 0.6;
+            Render(); return;
+        }
         if (falling)
         {
-            vy += 1.4; int ny = Top + (int)vy;
-            if (ny >= ground) { ny = ground; falling = false; vy = 0; SetState(2, 25); }
+            vy += 1.4; fallTicks++; int ny = Top + (int)vy;
+            if (fallTicks == 3 && vy > 0) Say(pet == 0 ? "喵啊啊～" : PetSounds[pet] + "啊啊～", 30);
+            if (ny >= ground)
+            {
+                ny = ground; falling = false;
+                landImpact = Math.Min(1.0, vy / 26.0); landTicks = 16;
+                if (vy > 14) Say(rnd.Next(2) == 0 ? "呼～安全降落！" : "嚇死我了～", 50); else bubbleTicks = 0;
+                vy = 0; swing = 0; swingV = 0; SetState(2, 30);
+            }
             Top = ny; Render(); return;
         }
+        if (landTicks > 0) landTicks--;
         if (blinkTicks > 0) blinkTicks--; else if (rnd.Next(110) == 0) blinkTicks = 4;
         if (bubbleTicks > 0) bubbleTicks--;
         if (heartTicks > 0) heartTicks--;
@@ -471,7 +488,7 @@ public class LeyanCatPet : Form
     void OnDown(object s, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left) return;
-        mouseDown = true; dragging = false; downScreen = Cursor.Position; downLoc = Location;
+        mouseDown = true; dragging = false; downScreen = Cursor.Position; downLoc = Location; lastDragX = int.MinValue;
     }
 
     void OnMove(object s, MouseEventArgs e)
@@ -479,14 +496,15 @@ public class LeyanCatPet : Form
         if (!mouseDown) return;
         Point p = Cursor.Position;
         if (!dragging && (Math.Abs(p.X - downScreen.X) > 4 || Math.Abs(p.Y - downScreen.Y) > 4)) dragging = true;
-        if (dragging) { if (mode == 2) EndPlay(); if (mode == 1) mode = 0; hopY = 0; Location = new Point(downLoc.X + p.X - downScreen.X, downLoc.Y + p.Y - downScreen.Y); x = Left; }
+        if (dragging && lastDragX == int.MinValue) { lastDragX = p.X; swing = 0; swingV = 0; landTicks = 0; Say(pet == 0 ? "喵！放我下來～" : PetSounds[pet] + "！放我下來～", 40); }
+        if (dragging) { dragVx = dragVx * 0.5 + (p.X - lastDragX) * 0.5; lastDragX = p.X; if (mode == 2) EndPlay(); if (mode == 1) mode = 0; hopY = 0; Location = new Point(downLoc.X + p.X - downScreen.X, downLoc.Y + p.Y - downScreen.Y); x = Left; }
     }
 
     void OnUp(object s, MouseEventArgs e)
     {
         if (e.Button != MouseButtons.Left || !mouseDown) return;
         mouseDown = false;
-        if (dragging) { dragging = false; falling = true; vy = 0; }
+        if (dragging) { dragging = false; falling = true; vy = 0; fallTicks = 0; }
         else if (mode == 2 && inWheel) { wheelBoost = Math.Min(30, wheelBoost + 10); Say("吱！再快一點！", 30); }
         else if (mode == 2) Say("抓到了！喵～", 35);
         else if (mode == 1) { }
@@ -549,19 +567,74 @@ public class LeyanCatPet : Form
                 bool eating = mode == 1 && modeTicks > 18 && modeTicks < 92;
                 float munch = eating && (modeTicks / 4) % 2 == 0 ? 3f : 0f;
                 if (mode == 1 && modeTicks < 100) DrawTreat(g, ox + 78, oy, modeTicks, bites);
+                // 落地的灰塵（畫在變形之外，留在地上）
+                if (landTicks > 8 && landImpact > 0.3) DrawDust(g, 16 - landTicks);
+                GraphicsState body = g.Save();
+                bool held = dragging || falling;
+                if (dragging)
+                {
+                    // 被拎著：以頭頂為支點擺盪，身體微微拉長
+                    float ax = W / 2f, ay = H - 96;
+                    g.TranslateTransform(ax, ay); g.RotateTransform((float)swing); g.ScaleTransform(0.95f, 1.07f); g.TranslateTransform(-ax, -ay);
+                }
+                else if (falling)
+                {
+                    // 往下掉：越掉越快越拉長、左右小抖動
+                    float st = (float)Math.Min(0.3, vy * 0.018);
+                    float ax = W / 2f, ay = H;
+                    g.TranslateTransform(ax, ay); g.RotateTransform((float)Math.Sin(tick / 1.6) * 4f); g.ScaleTransform(1f - st * 0.5f, 1f + st); g.TranslateTransform(-ax, -ay);
+                    if (vy > 6) DrawSpeedLines(g, vy);
+                }
+                else if (landTicks > 0)
+                {
+                    // 落地：壓扁再彈回來（越高摔下來壓得越扁）
+                    double t = 16 - landTicks, amp = landImpact * 0.34 * Math.Exp(-t / 4.5);
+                    float k = (float)(amp * Math.Cos(t * 0.95));
+                    float ax = W / 2f, ay = H;
+                    g.TranslateTransform(ax, ay); g.ScaleTransform(1f + k * 0.8f, 1f - k); g.TranslateTransform(-ax, -ay);
+                }
                 if (pet != 0 && PetImg("") != null)
                 {
                     bool asleep = state == 3 && mode == 0 && !dragging && !falling;
                     bool walking = !asleep && !(state == 1 || state == 3 || dragging || falling);
-                    DrawPet(g, asleep, walking, walking && (state == 0 || hopY > 0), munch, blinkTicks > 0 || eating);
+                    DrawPet(g, asleep, walking, walking && (state == 0 || hopY > 0), munch, blinkTicks > 0 || eating || falling);
                 }
                 else if (state == 3 && mode == 0 && !dragging && !falling) DrawSleep(g, ox, oy);
-                else if (state == 1 || state == 3 || dragging || falling) DrawSit(g, ox, oy + munch, blinkTicks > 0 || eating);
+                else if (state == 1 || state == 3 || dragging || falling) DrawSit(g, ox, oy + munch, blinkTicks > 0 || eating || falling);
                 else DrawWalk(g, ox, oy, dir > 0, (state == 0 || hopY > 0) ? frame : 1, blinkTicks > 0);
+                g.Restore(body);
                 if (heartTicks > 0) DrawHearts(g, heartTicks);
-                if (bubbleTicks > 0 && !dragging) DrawBubble(g, bubbleText);
+                if (bubbleTicks > 0) DrawBubble(g, bubbleText);
             }
             Apply(bmp);
+        }
+    }
+
+    // 往下掉時頭上的速度線
+    void DrawSpeedLines(Graphics g, double v)
+    {
+        int a = (int)Math.Min(170, (v - 6) * 14);
+        using (Pen p = new Pen(Color.FromArgb(a, 120, 130, 145), 2f))
+        {
+            p.StartCap = LineCap.Round; p.EndCap = LineCap.Round;
+            float len = (float)Math.Min(30, v * 1.4);
+            float[] xs = { W / 2f - 26, W / 2f - 6, W / 2f + 16, W / 2f + 32 };
+            for (int i = 0; i < xs.Length; i++) { float y0 = H - 104 - (i % 2) * 8; g.DrawLine(p, xs[i], y0 - len, xs[i], y0); }
+        }
+    }
+
+    // 落地時左右噴出的小灰塵
+    void DrawDust(Graphics g, int t)
+    {
+        int a = Math.Max(0, 200 - t * 25);
+        using (SolidBrush b = new SolidBrush(Color.FromArgb(a, 205, 200, 190)))
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                float d = 22 + t * 5 + i * 9, r = 5 + t * 0.9f - i;
+                g.FillEllipse(b, W / 2f - 30 - d - r, H - 10 - i * 4 - r, r * 2, r * 2);
+                g.FillEllipse(b, W / 2f + 30 + d - r, H - 10 - i * 4 - r, r * 2, r * 2);
+            }
         }
     }
 
