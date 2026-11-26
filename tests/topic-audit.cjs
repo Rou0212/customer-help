@@ -5,5 +5,5 @@ for(const [q,id]of functions)assert(cat.rankFaq(q).some(x=>x.f.id===id),q+' -> '
 for(const [q,ids]of negatives)assert(!cat.rankFaq(q).some(x=>ids.includes(x.f.id)),q);
 for(const q of ['讀卡機異常代碼有哪些','讀卡機有哪些錯誤碼','讀卡機錯誤代碼']){assert.equal(cat.rank(q)[0]?.d.id,'card-reader-errors',q);assert.equal(cat.rankFaq(q).length,0,q);}
 assert(!cat.rank('同意書醫師簽名跑不出來').some(x=>x.d.id==='perio-chart'));
-const data=vm.runInContext('({faqs:FAQS,functions:FUNCTION_INDEX})',c);assert.equal(data.faqs.length,169);assert.equal(new Set([...data.faqs,...data.functions].map(f=>f.id)).size,192);
-console.log('PASS topic audit:',positives.length,'exact/short positives,',functions.length,'functional topics,',negatives.length,'cross-topic negatives, 3 reader directories, 169 IDs');
+const data=vm.runInContext('({faqs:FAQS,functions:FUNCTION_INDEX})',c);assert.equal(data.faqs.length,175);assert.equal(new Set([...data.faqs,...data.functions].map(f=>f.id)).size,198);
+console.log('PASS topic audit:',positives.length,'exact/short positives,',functions.length,'functional topics,',negatives.length,'cross-topic negatives, 3 reader directories, 175 IDs');

@@ -98,6 +98,14 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
  if(/診[斷断]證明|certificateofdiagnosis/.test(n)&&/英文|英語|雙語|中英|english/.test(n))return {type:'topics',faqs:['diagnosis-certificate-bilingual'],docs:[]};
  if(/(?:優待|優惠)(?:身[分份]|項目)/.test(n)&&/更改|更動|修改|編輯|刪除|新增|調整|變更|設定|改|刪/.test(n)&&!/補卡|優待部分負擔已經超過|沒(?:有)?帶入/.test(n))return {type:'topics',faqs:['ley-discount'],docs:[]};
  if(/新增|建立|建檔/.test(n)&&/藥品/.test(n)&&!/套餐|處方|領藥/.test(n))return {type:'topics',faqs:['ley-drug'],docs:[]};
+ if(/療程|課程|治療單|治療規劃|預付金|預收款/.test(n)&&!/樂易智|項目設定|權限|不見|晃動|跳動|耗材|扣庫|儲值|報表/.test(n)){
+  if(/課程退款|標記退款|退款狀態|按.{0,6}退款.{0,6}(?:退了|退錢)/.test(n))return {type:'topics',faqs:['treatment-status'],docs:[]};
+  if(/抵扣/.test(n)&&/預付金|預收款/.test(n))return {type:'topics',faqs:['treatment-credit'],docs:[]};
+  if(/作廢|開錯/.test(n))return {type:'topics',faqs:['treatment-void'],docs:[]};
+  if(/換|轉|改(?:成|療程|課程)/.test(n))return {type:'topics',faqs:['treatment-switch'],docs:[]};
+  if(/終止|恢復課程/.test(n))return {type:'topics',faqs:['treatment-stop'],docs:[]};
+  if(/退款|退費|退刷/.test(n))return {type:'topics',faqs:['treatment-payment'],docs:[]};
+ }
  const routes=[
  [/(?:(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?).*(?:哪些|什麼|誰|身分|身份|對象|資格|榮|福)|(?:哪些|什麼|誰|身分|身份|對象|資格|榮福).*(?:免(?:收|除)?(?:健保)?部分負擔|部分負擔.*免(?:收|除)?)|^免(?:收|除)?(?:健保)?部分負擔$|^榮福(?:身分|身份)?$)/,['copay-exemption-eligibility'],[]],
  [/(?:合理量|合理門診點數).*(?:是什麼|調升|調降|調整|怎麼用)|(?:調升|調降).*(?:合理量|診察碼)/,['reasonable-volume-adjustment'],[]],
