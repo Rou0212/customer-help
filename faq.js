@@ -23,12 +23,12 @@ const FAQ_GROUPS=[
 {id:'aesthetic',name:'醫美相關報表',color:'#A55173'}];
 const OFFICIAL_URLS={'hca-unlock':'https://hca.nat.gov.tw/CertAction/PinAUnlock'};
 const FAQS=[
-{"id":"treatment-switch","group":"aesthetic","title":"客人想換療程怎麼做？","text":"先核對原課程的剩餘量與已付款金額。換療程涉及原課程終止、新治療評估與款項抵扣；請由診所帳務確認差額與處理方式後再操作。","tags":"換療程 改療程 轉換療程","doc":"treatment-workflows"},
-{"id":"treatment-stop","group":"aesthetic","title":"治療規劃如何終止或還原課程？","text":"在【治療規劃 → 課程】找到該筆課程，查看【終止】或【還原終止】。若殘餘金額已抵扣到其他單據，請交帳務核對，不要另開單沖銷。","tags":"終止課程 還原終止 恢復課程","doc":"treatment-workflows"},
-{"id":"treatment-status","group":"aesthetic","title":"按了課程退款，錢就退了嗎？","text":"【治療規劃 → 課程】的「退款」是標記課程狀態，不等於款項已退回。原教案指出按下會直接送出，請先由帳務確認課程與後續退款方式，不要按來試。","tags":"課程退款 標記退款 退款狀態","doc":"treatment-workflows"},
-{"id":"treatment-payment","group":"aesthetic","title":"治療規劃的退款金額在哪裡登記？","text":"由帳務到【治療規劃 → 收費紀錄】核對原單、實收金額和付款方式，確認後登記退款紀錄。現金退回或刷卡退刷仍須另按診所流程辦理。","tags":"收費紀錄退款 退費登記 退刷 療程退款","doc":"treatment-workflows"},
-{"id":"treatment-credit","group":"aesthetic","title":"預付金怎麼抵扣療程費用？","text":"到【治療規劃 → 預付金】查餘額，再由帳務於【收費紀錄】確認付款方式、預付種類及可抵扣金額。選項名稱可能由診所自訂。","tags":"預付金抵扣 預收款抵扣 療程抵扣","doc":"treatment-workflows"},
-{"id":"treatment-void","group":"aesthetic","title":"治療單開錯，怎麼作廢？","text":"請由帳務在【治療規劃 → 收費紀錄】核對原單及收退款、關帳狀態。確認可作廢後使用【作廢治療單】，並填寫原因。","tags":"作廢治療單 治療單開錯","doc":"treatment-workflows"},
+{"id":"treatment-switch","group":"aesthetic","title":"客人想換療程怎麼做？","text":"先核對原課程的剩餘量與已付款金額。換療程涉及原課程終止、新治療評估與款項抵扣；請由診所帳務確認差額與處理方式後再操作。","tags":"換療程 改療程 轉換療程"},
+{"id":"treatment-stop","group":"aesthetic","title":"治療規劃如何終止或還原課程？","text":"在【治療規劃 → 課程】找到該筆課程，查看【終止】或【還原終止】。若殘餘金額已抵扣到其他單據，請交帳務核對，不要另開單沖銷。","tags":"終止課程 還原終止 恢復課程"},
+{"id":"treatment-status","group":"aesthetic","title":"按了課程退款，錢就退了嗎？","text":"【治療規劃 → 課程】的「退款」是標記課程狀態，不等於款項已退回。按下會直接送出，請先由帳務確認課程與後續退款方式，不要按來試。","tags":"課程退款 標記退款 退款狀態"},
+{"id":"treatment-payment","group":"aesthetic","title":"治療規劃的退款金額在哪裡登記？","text":"由帳務到【治療規劃 → 收費紀錄】核對原單、實收金額和付款方式，確認後登記退款紀錄。現金退回或刷卡退刷仍須另按診所流程辦理。","tags":"收費紀錄退款 退費登記 退刷 療程退款"},
+{"id":"treatment-credit","group":"aesthetic","title":"預付金怎麼抵扣療程費用？","text":"到【治療規劃 → 預付金】查餘額，再由帳務於【收費紀錄】確認付款方式、預付種類及可抵扣金額。選項名稱可能由診所自訂。","tags":"預付金抵扣 預收款抵扣 療程抵扣"},
+{"id":"treatment-void","group":"aesthetic","title":"治療單開錯，怎麼作廢？","text":"請由帳務在【治療規劃 → 收費紀錄】核對原單及收退款、關帳狀態。確認可作廢後使用【作廢治療單】，並填寫原因。","tags":"作廢治療單 治療單開錯"},
 {id:'self-pay-prescription-print',group:'emr',title:'怎麼開立及列印自費領藥處方箋？',tags:'自費藥 自費領藥 自費處方箋 自費處方簽 院內開藥 調劑方式',text:'在樂晴病歷內，將【調劑方式】改為【院內開藥】，即可列印自費領藥處方箋。'},
 {id:'diagnosis-certificate-bilingual',group:'emr',title:'有英文版診斷證明嗎？',tags:'英文診斷證明 英文版診斷證明 中英文診斷證明 雙語診斷證明 診斷證明列印',text:'系統內的診斷證明列印後就是中英文雙語格式，不需要另外選英文版。表單欄位有中英文，填入的內容不會因此自動翻譯。',img:'diagnosis-certificate-bilingual'},
 {"id": "copay-exemption-eligibility", "group": "reg", "title": "哪些人可免除健保部分負擔？", "tags": "免部分負擔 免收部分負擔 免除部分負擔 部分負擔身分 部分負擔身份 榮福 榮民 低收入戶 百歲 油症", "steps": ["持有重大傷病證明者、分娩者、山地離島地區就醫者。", "健保卡註記「榮」字（榮民、榮民遺眷家戶代表）或「福」字（低收入戶）者。", "百歲人瑞。", "3歲以下兒童、替代役役男、登記列管結核病患至指定特約醫院就醫、勞保職業傷病就醫者。", "油症患者（第一代門、急診及住院；第二代門、急診就醫）。"], "source": "內容由 Rou 提供核可。", "sourceUrl": "https://www.nhi.gov.tw/ch/cp-5158-91a83-2737-1.html", "sourceLabel": "健保署：免除所有部分負擔者"},
