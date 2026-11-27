@@ -20,6 +20,10 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
 // 優先判斷詢問對象與缺失情境；不從歷史對話或主題欄補錯誤碼。
 function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
+ const readerTimeout=n.normalize('NFKC');
+ if(/^(?:錯誤(?:碼)?)?4000$/.test(readerTimeout)||/(?:^|[^0-9])4000(?![0-9]).{0,20}timeout/.test(readerTimeout)||/讀卡機.{0,12}(?:timeout|逾時|超時)/.test(readerTimeout)){
+  return {type:'topics',faqs:['4000'],docs:[]};
+ }
  const appealText=n.normalize('NFKC');
  if(/(?:^|[^a-z0-9])e201(?![0-9])|附件資料未送達/.test(appealText))return {type:'appeal-e201'};
  // The database filename survives common OCR mistakes such as E1I and 資畔庫.
@@ -181,6 +185,7 @@ const topicCore=s=>norm(s).replace(/如何|怎麼|怎樣|可以|請問|我要|�
 const faqTopicEvidence=(n,p)=>p.toks.some(t=>topicCore(t).length>=2&&n.includes(t))||[...bigrams(topicCore(n))].some(b=>topicCore(p.title).includes(b));
 function rankFaq(q){const route=routeQuestion(q);if(route)return route.type==='topics'?faqPool.filter(p=>route.faqs.includes(p.f.id)).map(p=>({f:p.f,score:100})):[];const n=faqQuery(q).replace(/如何|怎麼|怎樣|可以|請問|我要|要怎|嗎/g,'');if(!n)return [];if(/讀卡機/.test(n)&&/代碼|錯誤碼/.test(n)&&!/[0-9]{4}/.test(n))return [];return faqPool.map(p=>{let s=0;
  if(!faqTopicEvidence(n,p))return {f:p.f,score:0};
+ if(p.f.id==='4000')return {f:p.f,score:0};
  if(p.f.id==='dental-daily-cash'&&!/帳|日結|實收/.test(n))return {f:p.f,score:0};
  if(p.f.id==='vpn-queue'&&/上傳失敗|送出失敗|無法上傳|不能上傳|傳不上|傳不出|錯誤/.test(n))return {f:p.f,score:0};
  if(p.f.excludeAny?.some(t=>n.includes(norm(t))))return {f:p.f,score:0};
@@ -219,6 +224,8 @@ const fixDigits=t=>String(t).replace(/[Ss$](?=[0-9OoＯ]{3})/g,'5').replace(/[Oo
 const CONFUSE={'5':'96','9':'5','6':'58','8':'036','0':'8','3':'8','1':'7','7':'1'};
 function nearCode(c){const hits=new Set();for(let i=0;i<4;i++)for(const r of (CONFUSE[c[i]]||'')){const k=c.slice(0,i)+r+c.slice(i+1);if(KNOWN_CODES.has(k))hits.add(k)}return hits.size===1?[...hits][0]:''}
 function popupCode(raw,fuzzy){
+ const timeout=raw.normalize('NFKC').split(/\r?\n/).some(line=>/(?:^|[^0-9])4[0o]\s*[0o]\s*[0o](?!\s*\d).{0,24}t\s*i\s*m\s*e\s*o\s*u\s*t/i.test(line));
+ if(timeout)return '4000 讀卡機 TIMEOUT';
  const lines=fixDigits(raw).split(/\r?\n/);
  for(const line of lines){
   const m=line.match(/(?:^|[^\d])([0-9]{4})\s*[-－—–)）:：]/);

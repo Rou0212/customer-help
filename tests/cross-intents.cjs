@@ -36,3 +36,7 @@ for(const q of ['預設預約背景色怎麼改','怎麼改休診顏色']) asser
 
 for(const q of ['外籍人士身分證要打什麼','外籍人士身份證要打什麼','外國人建檔要填什麼','外籍病人掛號可以填護照嗎']) assert.equal(rankFaq(q).map(x=>x.f.id).join(','),'np-nocard',q);
 for(const q of ['寫卡錯誤 5020：資料不一致','批價沒有帶入健保身分','欠卡患者換身分證無法補卡']) assert.notEqual(rankFaq(q)[0]?.f.id,'np-nocard',q);
+
+for(const q of ['4000','４０００ TIME OUT','4000-讀卡機 TIMEOUT','讀卡機逾時']) assert.equal(rankFaq(q)[0]?.f.id,'4000',q);
+assert.notEqual(rankFaq('網路 TIMEOUT')[0]?.f.id,'4000');
+assert.equal(ctx.window.LeyanCat._ocrPrep.popupCode('4O00 - 讀卡機 time out\n5022 其他資料',true),'4000 讀卡機 TIMEOUT');
