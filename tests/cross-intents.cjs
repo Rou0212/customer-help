@@ -33,3 +33,6 @@ assert.equal(rankFaq('要發送生日簡訊給當月壽星，要如何操作？'
 assert.notEqual(rankFaq('LINE不能發訊息')[0]?.f.id,'batch-49');
 
 for(const q of ['預設預約背景色怎麼改','怎麼改休診顏色']) assert.notEqual(rankFaq(q)[0]?.f.id,'appointment-arrival-color',q);
+
+for(const q of ['外籍人士身分證要打什麼','外籍人士身份證要打什麼','外國人建檔要填什麼','外籍病人掛號可以填護照嗎']) assert.equal(rankFaq(q).map(x=>x.f.id).join(','),'np-nocard',q);
+for(const q of ['寫卡錯誤 5020：資料不一致','批價沒有帶入健保身分','欠卡患者換身分證無法補卡']) assert.notEqual(rankFaq(q)[0]?.f.id,'np-nocard',q);

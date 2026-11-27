@@ -58,6 +58,10 @@ function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線
   return {type:'topics',faqs:['batch-48'],docs:[]};
  }
  if((/自費/.test(n)&&/開藥|開.*藥|領藥|處方|藥單|列印.*藥|藥.*印|病歷.*新增.*藥/.test(n)||/院內開藥/.test(n))&&!/新增藥品|建藥品|藥品新增/.test(n))return {type:'topics',faqs:['self-pay-prescription-print'],docs:[]};
+ // 外籍患者建檔欄位與寫卡錯誤、健保身分分開。
+ if(/外籍|外國|外來人口/.test(n)&&/身[分份]證|身[分份]字號|居留證|護照|統一證號|建檔|新增.*(?:患者|病人|病患)/.test(n)&&!/寫卡|欠卡|補卡|5020|批價|健保身[分份]|更正|修改|變更|更換|換證/.test(n)){
+  return {type:'topics',faqs:['np-nocard'],docs:[]};
+ }
  if(/退押金.*(?:日結|現金帳)|後台.*幫忙修改|護照.*新增患者|初診表單.*簽名區|(?:p7101|p7102).*帶入.*icd|抽審.*icd.*修改|維護.*(?:正常使用|看診)|員工打卡.*忘記|自費藥單|塗氟.*時間未到|昨天.*預約.*病人|預約.*昨天|同個人.*整合|新增殘根/.test(n))return {type:'human'};
  if(/格式不符/.test(n)&&!/電子簽章|電子病歷|收據/.test(n))return {type:'clarify',message:'請問「格式不符」出現在哪個功能（電子簽章、申報、收據或其他上傳）？請提供完整畫面訊息文字，不含患者個資，才能確認對應主題。'};
  // Refill with a missing diagnosis code is 9127, not the ICD9/ICD10 mapping workflow.
