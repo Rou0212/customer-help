@@ -101,8 +101,25 @@ body.modal-open .lc-fab-wrap{display:none}
 .lc-cities button{min-width:0;padding:6px 2px;border:1px solid #cbd5e1;border-radius:7px;background:white;color:#24354b;cursor:pointer}
 
 .lc-city-bar{flex:1;min-width:0;color:#354052;font-size:13px}
-.lc-city-bar select{max-width:100%;color:inherit;font:inherit}
-.lc-city-bar small{display:block;margin-top:2px}
+/* 目前縣市：收起後留在上方，點一下可更改 */
+.lc-root .lc-city-chip{width:auto;max-width:100%;min-height:32px;padding:0 12px;border:1.5px solid #3468A8;border-radius:999px;background:#EEF5FF;color:#17213B;font:inherit;font-size:13px;font-weight:700;white-space:nowrap;cursor:pointer}
+.lc-root .lc-city-chip.lc-city-empty{border-color:#B45309;background:#FFF4D6}
+/* 縣市選單：蓋住對話區，選完往上收起 */
+.lc-city-picker{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:10px 12px;text-align:center;background:#F7FAFF}
+.lc-city-picker[hidden],.lc-city-picker [hidden]{display:none}
+.lc-panel.lc-picking>.lc-notice,.lc-panel.lc-picking>.lc-log,.lc-panel.lc-picking>.lc-quick,.lc-panel.lc-picking>.lc-form{display:none}
+.lc-city-heading{display:block;font-size:18px;line-height:1.4}
+.lc-city-hint{margin:2px 0 8px;font-size:14px;color:#526077}
+.lc-city-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;max-width:560px;margin:0 auto}
+.lc-root .lc-city-grid button{width:100%;min-width:0;min-height:40px;margin:0;padding:4px 2px;border:1.5px solid #B8C6DA;border-radius:10px;background:#fff;color:#17213B;font:inherit;font-size:15px;cursor:pointer}
+.lc-root .lc-city-grid button:hover{border-color:#3468A8;background:#EEF5FF}
+.lc-root .lc-city-grid button[aria-pressed="true"]{border-color:#17213B;background:#17213B;color:#fff;font-weight:700}
+.lc-root .lc-city-cancel{width:auto;min-height:36px;margin-top:12px;padding:0 16px;border:1.5px solid #B8C6DA;border-radius:999px;background:#fff;color:#17213B;font:inherit;font-size:14px;cursor:pointer}
+.lc-city-note{margin:8px 0 0;font-size:12px;line-height:1.7;color:#526077}
+.lc-city-note a{color:#1D5FA8;font-weight:700;white-space:nowrap}
+@media (prefers-reduced-motion:no-preference){.lc-city-picker{animation:lc-city-down .2s ease-out}.lc-city-closing .lc-city-picker{animation:lc-city-up .18s ease-in forwards}}
+@keyframes lc-city-down{from{clip-path:inset(0 0 100% 0);transform:translateY(-8px)}to{clip-path:inset(0);transform:none}}
+@keyframes lc-city-up{from{clip-path:inset(0);transform:none}to{clip-path:inset(0 0 100% 0);transform:translateY(-8px)}}
 .lc-root button:disabled{opacity:.48;cursor:not-allowed}
 /* 換夥伴按鈕 */
 .lc-swap{flex:none;margin-left:auto;min-height:32px;padding:0 10px;border:1.5px solid var(--lc-line);border-radius:999px;background:#fff;color:var(--lc-ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}.lc-swap:hover{border-color:#3468A8;background:#F7FAFF}
