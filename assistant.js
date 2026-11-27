@@ -21,7 +21,10 @@ function imageUploadRoute(q){const n=norm(q),pano=n.includes('pano');
 function routeQuestion(q){const n=norm(q);const xrayOpen=/(?:x光|ｘ光|x射線|pano)/.test(n)&&/打不開|開不了|開不起來|不能(?:開|打開|用|使用)|無法(?:開|打開|使用)|開啟失敗/.test(n);
  if(xrayOpen&&!/上傳|傳輸|擷取|finding/.test(n))return {type:'xray-open'};
  const readerTimeout=n.normalize('NFKC');
- if(/^(?:錯誤(?:碼)?)?4000$/.test(readerTimeout)||/(?:^|[^0-9])4000(?![0-9]).{0,20}timeout/.test(readerTimeout)||/讀卡機.{0,12}(?:timeout|逾時|超時)/.test(readerTimeout)){
+ const has4000=/(?:^|[^0-9])4000(?![0-9])/.test(readerTimeout);
+ const timeoutMention=/timeout|逾時|超時/.test(readerTimeout);
+ const readerMention=/讀卡機|讀卡器|讀卡/.test(readerTimeout);
+ if(/^(?:錯誤(?:碼)?)?4000$/.test(readerTimeout)||(has4000&&timeoutMention)||(readerMention&&timeoutMention)){
   return {type:'topics',faqs:['4000'],docs:[]};
  }
  const appealText=n.normalize('NFKC');
