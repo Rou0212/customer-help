@@ -284,7 +284,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const LINE_URL='https://line.me/R/ti/p/%40leyan';
 const humanRequest=q=>/人工客服|轉人工|找真人|找客服|聯絡客服|需要人工|官方line|line@|客服電話/i.test(norm(q));
 // 輸入框提示：舉一個完整問句當例子；手機輸入框比較窄，用短一點的說法
-const lcHint=()=>matchMedia("(max-width:640px)").matches?"例：健保上傳一直失敗":"輸入問題，例：健保上傳一直失敗…";
+const QUERY_PLACEHOLDER="請輸入問題或錯誤碼";
 const supportHtml=name=>'<div class="lc-support"><div class="lc-sup-head"><span class="lc-sup-ic"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z\"/></svg></span><b>交給真人客服幫你看看</b></div><p>有些狀況要看診所的實際資料，'+esc(name||'小黑貓')+'沒辦法直接查。別擔心，客服夥伴會接手幫你處理。</p><a class="lc-line-link" href="'+LINE_URL+'" target="_blank" rel="noopener noreferrer">用 LINE 找客服（@leyan）</a><div class="lc-sup-alt"><a class="lc-line-qr" href="'+LINE_URL+'" target="_blank" rel="noopener noreferrer" aria-label="掃描 QR code 加入官方 LINE@ @leyan"><img src="'+BASE+'images/line-official-qr.png" alt="官方 LINE@ @leyan 加入好友 QR code" loading="lazy"></a><small>用另一支手機掃描也可以。<br>不方便用 LINE 的話，<br>請撥 <b>04-2251-8815</b> 分機 9。</small></div></div>';
 const CAT_SVG='<svg class="lc-cat" viewBox="0 0 120 120" aria-hidden="true"><g class="lc-tail"><path d="M84 96c18-2 26-14 22-30-2-8-9-10-12-5" fill="none" stroke="#15191E" stroke-width="9" stroke-linecap="round"/></g><ellipse cx="58" cy="88" rx="30" ry="24" fill="#15191E"/><g class="lc-head-g"><path d="M30 44 34 18 50 34zM86 44 82 18 66 34z" fill="#15191E"/><path d="M35 38 37 26 45 34zM81 38 79 26 71 34z" fill="#E8A0A8"/><circle cx="58" cy="52" r="28" fill="#15191E"/><g class="lc-look"><g class="lc-eyes"><ellipse cx="47" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="69" cy="52" rx="6.5" ry="7.5" fill="#F6C945"/><ellipse cx="47" cy="53" rx="2.2" ry="5" fill="#15191E"/><ellipse cx="69" cy="53" rx="2.2" ry="5" fill="#15191E"/></g></g><path d="M55 63h6l-3 3z" fill="#E8A0A8"/><ellipse class="lc-mouth" cx="58" cy="70" rx="4" ry="3.2" fill="#7A2E3A"/><path d="M40 64 26 62M40 68 27 70M76 64l14-2M76 68l13 2" stroke="#8A9199" stroke-width="1.6" stroke-linecap="round"/></g><g class="lc-paw"><ellipse cx="70" cy="96" rx="7" ry="10" fill="#15191E" stroke="#5B6470" stroke-width="1.4"/><path d="M67 90v4M71 89v5" stroke="#5B6470" stroke-width="1.1" stroke-linecap="round"/></g><ellipse class="lc-tongue" cx="59" cy="70" rx="3" ry="4" fill="#E8708A"/><g class="lc-treat"><path d="M49 8c4-5 12-5 16 0-4 5-12 5-16 0zM65 8l7-4v8z" fill="#E9A15B"/><circle cx="53" cy="7" r="1.1" fill="#15191E"/></g></svg>';
 // 可選的夥伴：每隻都沿用小黑貓的動畫部位（lc-tail／lc-head-g／lc-eyes／lc-mouth／lc-paw／lc-tongue／lc-treat），所以舔毛、睡覺、吃東西、追逗逗棒都通用
@@ -417,11 +417,11 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  let pet=PETS[petKey];root.dataset.pet=petKey;setTitle();
  root.innerHTML=(mode==='fab'?'<button type="button" class="lc-fab" aria-expanded="false" aria-controls="lc-panel" aria-label="開啟'+pet.name+'助手">'+pet.svg+'<span class="lc-fab-tip" aria-hidden="true">需要幫忙嗎？</span></button>':'')+
  '<section class="lc-panel" id="lc-panel" aria-label="'+pet.name+'助手"'+(mode==='fab'?' hidden':'')+'>'+
- '<div class="lc-head">'+(mode==='page'?pet.svg:'')+'<strong class="lc-title">'+pet.name+'</strong><div class="lc-head-actions"><button type="button" class="lc-new">新問題</button><button type="button" class="lc-swap" aria-haspopup="menu" title="換一個夥伴陪你">🐾 換夥伴</button>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div></div>'+
+ '<div class="lc-head">'+(mode==='page'?pet.svg:'')+'<strong class="lc-title">'+pet.name+'</strong><div class="lc-head-actions"><button type="button" class="lc-swap" aria-haspopup="menu" title="換一個夥伴陪你">🐾 換夥伴</button>'+(mode==='fab'?'<button type="button" class="lc-close" aria-label="關閉助手">✕</button>':'')+'</div></div>'+
  '<aside class="lc-notice" aria-label="查詢提醒"><span class="lc-notice-pin" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 3 8 3-3 4 1 4-3 1-2-3-4-1 4-3zM10 14l-3 6"/></svg></span><div><div class="lc-notice-main"><mark>麻煩將問題一次輸入完整</mark>，方便<span class="lc-notice-name">'+esc(pet.name)+'</span>查詢。</div><div class="lc-notice-sub">送出後5秒內可補充；複雜問題請洽<button type="button" class="lc-human">人工客服</button></div></div></aside>'+
  '<div class="lc-announcer lc-sr" role="status" aria-live="polite" aria-atomic="true"></div><div class="lc-log" role="log" aria-live="polite"></div>'+
  '<div class="lc-quick">'+QUICK.map(q=>'<button type="button" data-q="'+esc(q)+'">'+esc(q)+'</button>').join('')+'</div>'+
- '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="'+lcHint()+'">'+
+ '<form class="lc-form"><label class="lc-sr" for="lc-input-'+mode+'">輸入你的問題</label><input id="lc-input-'+mode+'" class="lc-input" autocomplete="off" enterkeyhint="send" placeholder="'+QUERY_PLACEHOLDER+'">'+
  '<label class="lc-pic" title="選擇圖片辨識"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m21 17-5-5-8 7"/></svg><input type="file" accept="image/*" class="lc-file" aria-label="在本機辨識已遮蔽個資的錯誤畫面"></label>'+(SR?'<button type="button" class="lc-mic" aria-label="用語音說"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>':'')+
  '<button type="submit" class="lc-send">送出</button></form></section>';
  const $=s=>root.querySelector(s),log=$('.lc-log'),input=$('.lc-input'),panel=$('.lc-panel');let lastQuestion='';const policyHit=()=>typeof matchNhiProcedureCode==='function'?matchNhiProcedureCode(lastQuestion):null;const policyPage=d=>{const hit=d.id==='nhi-dentist-handbook-2026'&&policyHit();return hit&&hit.status==='found'?hit.pages[0]:1};
@@ -623,7 +623,6 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
   if(imageUploadPending&&/^(?:是|我|我是)?(?:擷取不到照片|有照片但傳輸失敗)$/.test(norm(q))){invalidateChoices();showImageUpload(norm(q).includes('擷取不到')?'missing':'transfer');return}
   batch.submit(q);
  }
- $('.lc-new').onclick=()=>{resetQuery(true);input.focus()};
  $('.lc-human').onclick=()=>ask('人工客服');
  // ---- 小黑貓互動：閒置舔毛；對貓按右鍵（手機長按）→ 餵零食／玩逗貓棒，都在桌面上，不寫進對話 ----
  const motionOK=()=>!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -791,7 +790,7 @@ function mount(root,opt){opt=opt||{};const mode=opt.mode||'page';
  if(SR){const mic=$('.lc-mic');let rec=null;mic.onclick=()=>{if(rec){rec.stop();return}rec=new SR();rec.lang='zh-TW';rec.interimResults=true;rec.maxAlternatives=1;let final='';mic.classList.add('on');mic.setAttribute('aria-label','停止語音');input.placeholder='請說話…';
   rec.onresult=ev=>{let t='';for(const r of ev.results){t+=r[0].transcript;if(r.isFinal)final=t}input.value=t};
   rec.onerror=ev=>{if(ev.error==='not-allowed')say('需要允許麥克風權限才能用語音喔。也可以直接打字。')};
-  rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder=lcHint();rec=null;if((final||input.value).trim())ask(final||input.value)};
+  rec.onend=()=>{mic.classList.remove('on');mic.setAttribute('aria-label','用語音說');input.placeholder=QUERY_PLACEHOLDER;rec=null;if((final||input.value).trim())ask(final||input.value)};
   try{rec.start()}catch{rec=null;mic.classList.remove('on')}}}
  return root}
 window.LeyanCat={createQueryBatch,isWaitCommand,mount,rank,rankFaq,routeQuestion,analyzeScreen,isAccountLookup,_ocrPrep:{findDialog,prepCrop,popupCode}};
